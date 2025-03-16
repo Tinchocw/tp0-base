@@ -55,7 +55,7 @@ def generate_docker_compose(num_clients, output_file):
 
     # Escribir el archivo YAML
     with open(output_file, 'w') as f:
-        yaml.dump(data, f, default_flow_style=False, sort_keys=False, indent=2)
+        yaml.dump(data, f, default_flow_style=False, Dumper=MyDumper, sort_keys=False, indent=2)
 
 
 if __name__ == '__main__':
