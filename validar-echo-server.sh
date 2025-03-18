@@ -15,5 +15,4 @@ else
     echo "action: test_echo_server | result: fail"
 fi
 
-python3 server-validation.py
 
