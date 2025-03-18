@@ -20,7 +20,7 @@ def add_clients(num_clients, data):
                 #'CLI_LOG_LEVEL=DEBUG'
             ],
             'networks': ['testing_net'],
-            'volumes': ['./client/config.yaml:/etc/client/config.yaml'],
+            'volumes': ['./client/config.yaml:/config.yaml'],
             'depends_on': ['server']
         }
     
@@ -37,7 +37,7 @@ def generate_docker_compose(num_clients, output_file):
                     'PYTHONUNBUFFERED=1'
                     #'LOGGING_LEVEL=DEBUG'
                 ],
-                'volumes': ['./server/config.ini:/etc/server/config.ini'],
+                'volumes': ['./server/config.ini:/config.ini'],
                 'networks': ['testing_net']
             }
         },
