@@ -20,7 +20,7 @@ def add_clients(num_clients, data):
                 #'CLI_LOG_LEVEL=DEBUG'
             ],
             'networks': ['testing_net'],
-            'volumes': ['./client/config.yaml:etc/client/config.yaml'],
+            'volumes': ['./client/config.yaml:/etc/client/config.yaml'],
             'depends_on': ['server']
         }
     
@@ -30,7 +30,7 @@ def generate_docker_compose(num_clients, output_file):
         'name': 'tp0',
         'services': {
             'server': {
-                'container_name': 'server',
+                'container_name': 'server', 
                 'image': 'server:latest',
                 'entrypoint': 'python3 /main.py',
                 'environment': [
