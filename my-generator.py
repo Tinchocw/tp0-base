@@ -15,10 +15,7 @@ def add_clients(num_clients, data):
             'container_name': client_name,
             'image': 'client:latest',
             'entrypoint': '/client',
-            'environment': [
-                f'CLI_ID={i}'
-                #'CLI_LOG_LEVEL=DEBUG'
-            ],
+            'environment': [f'CLI_ID={i}'],
             'networks': ['testing_net'],
             'volumes': ['./client/config.yaml:/config.yaml'],
             'depends_on': ['server']
@@ -33,10 +30,7 @@ def generate_docker_compose(num_clients, output_file):
                 'container_name': 'server', 
                 'image': 'server:latest',
                 'entrypoint': 'python3 /main.py',
-                'environment': [
-                    'PYTHONUNBUFFERED=1'
-                    #'LOGGING_LEVEL=DEBUG'
-                ],
+                'environment': ['PYTHONUNBUFFERED=1'],
                 'volumes': ['./server/config.ini:/config.ini'],
                 'networks': ['testing_net']
             }
