@@ -20,7 +20,7 @@ def add_clients(num_clients, data):
                 'CLI_LOG_LEVEL=DEBUG'
             ],
             'networks': ['testing_net'],
-            'volumes': ['/client/config.yaml:/config.yaml'],
+            'volumes': ['./client/config.yaml:/config.yaml'],
             'depends_on': ['server']
         }
     
