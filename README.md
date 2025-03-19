@@ -183,20 +183,4 @@ La corrección personal tendrá en cuenta la calidad del código entregado y cas
 # Entrega 
 
 ## Como correr el ejercicio 
-
-Para correr el ejercicio se debe ejecutar los siguientes comandos: 
-
-```sh
-# Generate the Docker Compose file without any clients
-./generar-compose.sh docker-compose-dev.yaml 0 
-
-# Start the Docker Compose services
-make docker-compose-up 
-
-# Validate the echo server functionality
-./validar-echo-server.sh
-```
-
 ## Aspectos importantes de la solución
-
-Para este ejercicio lo más importante fue notar que el servidor provee una red, en la cual se comunicar con los clients. Aprovechamos esta red y creamos un nuevo container ,a partir de la imagen de `alpine`, y nos conectamos a la red del servidor. Luego utilizamos `netcat` para enviar mensajes al servidor y verificar que el servidor responda correctamente.
