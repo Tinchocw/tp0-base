@@ -1,15 +1,11 @@
 
-ECHO_SERVER_CONTAINER="sever"
+ECHO_SERVER_CONTAINER="server"
 MESSAGE="message-validation"
-NET="my-net"
+NET="tp0_testing_net"
 
+RESULT=$(docker run --rm --network $NET  alpine /bin/sh -c "echo '$MESSAGE' | nc $ECHO_SERVER_CONTAINER 12345")
 
-docker network create $NET  # Creo la red por la que me voy a comunicar 
-docker network connect $NET server # Conecto el server a la red
-
-RESULT=docker (run --rm -network $NET alpine /bin/sh -c "echo '$MENSAJE' | nc $CONTENEDOR_ECHO_SERVER 12345") # Corro el cliente
-
-if [ "$RESULT" == "$MENSAJE" ]; then
+if [ "$RESULT" == "$MESSAGE" ]; then
     echo "action: test_echo_server | result: success"
 else
     echo "action: test_echo_server | result: fail"
