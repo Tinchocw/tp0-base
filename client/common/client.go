@@ -76,9 +76,6 @@ func (c *Client) deleteClientSocket() {
 	if c.conn != nil {
 		c.conn.Close()
 		log.Infof("action: close_socket | result: success | client_id: %v", c.config.ID)
-	} else {
-		log.Infof("action: close_socket | result: fail | client_id: %v", c.config.ID)
-
 	}
 
 }
