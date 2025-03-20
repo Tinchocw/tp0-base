@@ -97,7 +97,7 @@ func (c *Client) StartClientLoop() {
 
 		select {
 		case <-c.stopChan:
-			log.Infof("action: stop_received | result: shutting_down | client_id: %v", c.config.ID)
+			log.Infof("action: stop_received | result: success | client_id: %v", c.config.ID)
 			return
 		default:
 		}
