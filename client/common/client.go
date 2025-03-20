@@ -6,6 +6,10 @@ import (
 	"net"
 	"time"
 
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/op/go-logging"
 )
 
@@ -50,8 +54,36 @@ func (c *Client) createClientSocket() error {
 	return nil
 }
 
+func (c *Client) deleteClientSocket() {
+	if c.conn != nil {
+		c.conn.Close()
+		log.Infof("action: close_socket | result: success | client_id: %v", c.config.ID)
+	} else {
+		log.Infof("action: close_socket | result: fail | client_id: %v", c.config.ID)
+
+	}
+
+}
+
+func (c *Client) handleSignals() {
+	sigChan := make(chan os.Signal, 1) // This channel will receive the signals
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+
+		// Wait for the signal
+		<-sigChan
+		log.Infof("action: signal_received | result: success | client_id: %v", c.config.ID)
+		c.deleteClientSocket()
+	}()
+
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
+
+	c.handleSignals()
+
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
@@ -66,7 +98,7 @@ func (c *Client) StartClientLoop() {
 			msgID,
 		)
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
-		c.conn.Close()
+		c.deleteClientSocket()
 
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
