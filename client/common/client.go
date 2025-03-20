@@ -56,6 +56,15 @@ func (c *Client) createClientSocket() error {
 	return nil
 }
 
+func (c *Client) deleteResources(sigChan chan os.Signal) {
+	close(c.stopChan)
+	log.Infof("action: close_notification_channel | result: success | client_id: %v", c.config.ID)
+	signal.Stop(sigChan)
+	close(sigChan)
+	log.Infof("action: close_signal_channel | result: success | client_id: %v", c.config.ID)
+
+	c.deleteClientSocket()
+}
 func (c *Client) deleteClientSocket() {
 	if c.conn != nil {
 		c.conn.Close()
@@ -76,10 +85,7 @@ func (c *Client) handleSignals() {
 		// Wait for the signal
 		<-sigChan
 		log.Infof("action: signal_received | result: success | client_id: %v", c.config.ID)
-		close(c.stopChan)
-		signal.Stop(sigChan)
-		close(sigChan)
-		c.deleteClientSocket()
+		c.deleteResources(sigChan)
 	}()
 
 }
@@ -130,6 +136,9 @@ func (c *Client) StartClientLoop() {
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
 
+	}
+	if c.stopChan != nil {
+		close(c.stopChan)
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
