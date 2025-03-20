@@ -25,17 +25,17 @@ type ClientConfig struct {
 
 // Client Entity that encapsulates how
 type Client struct {
-	config   ClientConfig
-	conn     net.Conn
-	stopChan chan struct{}
+	config      ClientConfig
+	conn        net.Conn
+	stopChannel chan struct{}
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
-		config:   config,
-		stopChan: make(chan struct{}),
+		config:      config,
+		stopChannel: make(chan struct{}),
 	}
 	return client
 }
@@ -56,22 +56,29 @@ func (c *Client) createClientSocket() error {
 	return nil
 }
 
-func (c *Client) deleteResources(sigChan chan os.Signal) {
-	c.deleteChannel()
-	signal.Stop(sigChan)
-	close(sigChan)
-	log.Infof("action: close_signal_channel | result: success | client_id: %v", c.config.ID)
-
+func (c *Client) deleteResources(signalChannel chan os.Signal) {
+	c.deleteStopChannel()
+	c.deleteSignalChannel(signalChannel)
 	c.deleteClientSocket()
 }
 
-func (c *Client) deleteChannel() {
-	if c.stopChan != nil {
-		close(c.stopChan)
+func (c *Client) deleteSignalChannel(signalChannel chan os.Signal) {
+	if signalChannel != nil {
+		signal.Stop(signalChannel)
+		close(signalChannel)
+		log.Infof("action: close_signal_channel | result: success | client_id: %v", c.config.ID)
+	}
+
+}
+
+func (c *Client) deleteStopChannel() {
+	if c.stopChannel != nil {
+		close(c.stopChannel)
 		log.Infof("action: close_notification_channel | result: success | client_id: %v", c.config.ID)
 	}
 
 }
+
 func (c *Client) deleteClientSocket() {
 	if c.conn != nil {
 		c.conn.Close()
@@ -80,13 +87,11 @@ func (c *Client) deleteClientSocket() {
 
 }
 
-func (c *Client) handleSignals() {
-	sigChan := make(chan os.Signal, 1) // This channel will receive the signals
+func (c *Client) handleSignals(sigChan chan os.Signal) {
+	// Atach the signal channel to the signals SIGINT and SIGTERM
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-
-		// Wait for the signal
 		<-sigChan
 		log.Infof("action: signal_received | result: success | client_id: %v", c.config.ID)
 		c.deleteResources(sigChan)
@@ -96,20 +101,18 @@ func (c *Client) handleSignals() {
 
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
-
-	c.handleSignals()
+	signalChannel := make(chan os.Signal, 1) // This channel will receive the signals
+	c.handleSignals(signalChannel)
 
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
-		// Create the connection the server in every loop iteration. Send an
+		// Create the connection the server in every loop iteration. Send anj
 
-		select {
-		case <-c.stopChan:
-			log.Infof("action: stop_received | result: success | client_id: %v", c.config.ID)
+		isReceived := c.isSignalReceived()
+		if isReceived {
 			return
-		default:
 		}
 
 		c.createClientSocket()
@@ -141,6 +144,16 @@ func (c *Client) StartClientLoop() {
 		time.Sleep(c.config.LoopPeriod)
 
 	}
-	c.deleteChannel()
+	c.deleteResources(signalChannel)
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+}
+
+func (c *Client) isSignalReceived() bool {
+	select {
+	case <-c.stopChannel:
+		log.Infof("action: stop_received | result: success | client_id: %v", c.config.ID)
+		return true
+	default:
+	}
+	return false
 }
