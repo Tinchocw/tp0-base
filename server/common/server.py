@@ -16,6 +16,7 @@ class Server:
 
     def _cleanup(self):
         self._server_socket.close()
+        logging.info("action: close_server_socket | result: success")
 
 
     def _handle_sigterm(self, signum, frame):
@@ -25,9 +26,10 @@ class Server:
         This function is called when SIGTERM is received. It sets the
         shutdown flag to True, so the server can gracefully shutdown
         """
+
+        logging.info("action: handle_sigterm | result: success")
         self.shutdown = True
         self._cleanup()
-        sys.exit(0)
 
     def run(self):
         """
@@ -49,7 +51,6 @@ class Server:
                     break
                 logging.error(f"action: accept_connections | result: fail | error: {e}")
         
-
 
 
 
