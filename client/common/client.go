@@ -25,15 +25,17 @@ type ClientConfig struct {
 
 // Client Entity that encapsulates how
 type Client struct {
-	config ClientConfig
-	conn   net.Conn
+	config   ClientConfig
+	conn     net.Conn
+	stopChan chan struct{}
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
-		config: config,
+		config:   config,
+		stopChan: make(chan struct{}),
 	}
 	return client
 }
@@ -74,6 +76,9 @@ func (c *Client) handleSignals() {
 		// Wait for the signal
 		<-sigChan
 		log.Infof("action: signal_received | result: success | client_id: %v", c.config.ID)
+		close(c.stopChan)
+		signal.Stop(sigChan)
+		close(sigChan)
 		c.deleteClientSocket()
 	}()
 
@@ -86,8 +91,17 @@ func (c *Client) StartClientLoop() {
 
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
+
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
+
+		select {
+		case <-c.stopChan:
+			log.Infof("action: stop_received | result: shutting_down | client_id: %v", c.config.ID)
+			return
+		default:
+		}
+
 		c.createClientSocket()
 
 		// TODO: Modify the send to avoid short-write
