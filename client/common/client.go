@@ -1,13 +1,16 @@
 package common
 
 import (
-	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"net"
+	"strings"
 	"time"
 
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/op/go-logging"
@@ -30,6 +33,14 @@ type Client struct {
 	stopChannel chan struct{}
 }
 
+type UserBetConfig struct {
+	Name     string
+	LastName string
+	Document string
+	Birth    string
+	Number   int
+}
+
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
@@ -38,6 +49,22 @@ func NewClient(config ClientConfig) *Client {
 		stopChannel: make(chan struct{}),
 	}
 	return client
+}
+
+func (c *Client) loadUserBet() (UserBetConfig, error) {
+
+	number, err := strconv.Atoi(os.Getenv("NUMERO"))
+	if err != nil {
+		return UserBetConfig{}, fmt.Errorf("invalid NUMERO: %v", err)
+	}
+
+	return UserBetConfig{
+		Name:     os.Getenv("NOMBRE"),
+		LastName: os.Getenv("APELLIDO"),
+		Document: os.Getenv("DOCUMENTO"),
+		Birth:    os.Getenv("NACIMIENTO"),
+		Number:   number,
+	}, nil
 }
 
 // CreateClientSocket Initializes client socket. In case of
@@ -99,6 +126,76 @@ func (c *Client) handleSignals(sigChan chan os.Signal) {
 
 }
 
+func (c *Client) isSignalReceived() bool {
+	select {
+	case <-c.stopChannel:
+		log.Infof("action: stop_received | result: success | client_id: %v", c.config.ID)
+		return true
+	default:
+	}
+	return false
+}
+
+func (c *Client) sendAll(data string) error {
+	var total_sent = 0
+	var total_length = len(data)
+
+	for total_sent < total_length {
+
+		sent, err := c.conn.Write([]byte(data[total_sent:]))
+		if err != nil {
+			return fmt.Errorf("error sending data: %v", err)
+		}
+		if sent == 0 {
+			return fmt.Errorf("Socket connection closed")
+		}
+
+		total_sent += sent
+	}
+	return nil
+}
+
+func (c *Client) recvAll(delimiter byte) ([]byte, error) {
+	var buffer bytes.Buffer
+	tmp := make([]byte, 1024)
+
+	for {
+
+		n, err := c.conn.Read(tmp)
+
+		if n > 0 {
+			// Escribimos los datos leídos (hasta n bytes) en el buffer principal
+			buffer.Write(tmp[:n])
+
+			if bytes.Contains(tmp[:n], []byte{delimiter}) {
+				break
+			}
+		}
+
+		if err != nil {
+			if err == io.EOF {
+				// Si se alcanza el final de la conexión, terminamos
+				break
+			}
+			return nil, fmt.Errorf("error reading data: %w", err)
+		}
+	}
+	return buffer.Bytes(), nil
+}
+
+func (c *Client) decodeData(data []byte) []string {
+
+	dataString := string(data)
+
+	parts := strings.Split(dataString, ",")
+
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
+	}
+
+	return parts
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
 	signalChannel := make(chan os.Signal, 1) // This channel will receive the signals
@@ -115,18 +212,43 @@ func (c *Client) StartClientLoop() {
 			return
 		}
 
+		userBet, err := c.loadUserBet()
+		if err != nil {
+			log.Errorf("action: load_clients_bet | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return
+		}
+
 		c.createClientSocket()
 
-		// TODO: Modify the send to avoid short-write
-		fmt.Fprintf(
-			c.conn,
-			"[CLIENT %v] Message N°%v\n",
+		var data = fmt.Sprintf(
+			"%v,%s,%s,%s,%s,%d\n",
 			c.config.ID,
-			msgID,
+			userBet.Name,
+			userBet.LastName,
+			userBet.Document,
+			userBet.Birth,
+			userBet.Number,
 		)
-		msg, err := bufio.NewReader(c.conn).ReadString('\n')
-		c.deleteClientSocket()
 
+		err = c.sendAll(data)
+
+		if err != nil {
+			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return
+		}
+
+		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %d",
+			userBet.Document,
+			userBet.Number,
+		)
+
+		msg, err := c.recvAll('\n')
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
@@ -134,26 +256,18 @@ func (c *Client) StartClientLoop() {
 			)
 			return
 		}
-
-		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-			c.config.ID,
-			msg,
+		decodedData := c.decodeData(msg)
+		log.Infof("action: apuesta_almacenada | result: success | dni: %v | numero: %v",
+			decodedData[0],
+			decodedData[1],
 		)
+
+		c.deleteClientSocket()
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
-
 	}
+
 	c.deleteResources(signalChannel)
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
-}
-
-func (c *Client) isSignalReceived() bool {
-	select {
-	case <-c.stopChannel:
-		log.Infof("action: stop_received | result: success | client_id: %v", c.config.ID)
-		return true
-	default:
-	}
-	return false
 }
