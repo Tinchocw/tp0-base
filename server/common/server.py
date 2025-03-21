@@ -32,7 +32,7 @@ class Server:
         self.__cleanup()
 
     def __decode_data(self, data):
-        decoded_data = data.decode('utf-8').rstrip().split('\n')
+        decoded_data = data.decode('utf-8').rstrip().split(',')
         if len(decoded_data) != 6:
                 raise ValueError("Invalid data length")
         
@@ -52,10 +52,10 @@ class Server:
     
     def sendall (self, socket, data):
         total_sent = 0
-        total_legth = len(data)
+        total_legth = len(data) 
 
         while total_sent < total_legth:
-                sent = socket.send(data)
+                sent = socket.send(data[total_sent:]) 
                 if sent == 0:
                     raise RuntimeError("socket connection broken")
                 
@@ -100,7 +100,7 @@ class Server:
             bet_number = decoded_data[5]
 
             
-            response = f"{dni}\n{bet_number}\n"
+            response = f"{dni},{bet_number}\n"
             self.sendall(client_sock, response.encode('utf-8'))
 
         except OSError as e:
