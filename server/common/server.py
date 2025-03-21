@@ -1,7 +1,7 @@
 import socket
 import logging
 import signal
-import utils 
+from common import utils
 
 class Server:
     def __init__(self, port, listen_backlog):
