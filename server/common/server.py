@@ -48,6 +48,9 @@ class Server:
 
             data += chunk
 
+            if b'\n' in chunk:
+                break
+            
         return  data 
     
     def sendall (self, socket, data):
