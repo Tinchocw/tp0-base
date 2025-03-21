@@ -1,7 +1,6 @@
 import socket
 import logging
 import signal
-import sys
 import utils 
 
 class Server:
