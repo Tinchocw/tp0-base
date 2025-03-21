@@ -31,20 +31,12 @@ class Server:
         self.shutdown = True
         self.__cleanup()
 
-    def __decode_message(self, data):
-        return data.decode('utf-8').rstrip().split('\n')
-
-    def __create_bet_from_data(self, data):
-
-        self.__decode_message(data)
-
-        if len(data) != 6:
+    def __decode_data(self, data):
+        decoded_data = data.decode('utf-8').rstrip().split('\n')
+        if len(decoded_data) != 6:
                 raise ValueError("Invalid data length")
         
-        bet = utils.Bet(data[0], data[1], data[2], data[3], data[4], data[5]) 
-        utils.store_bets([bet])
-        logging.info(f'action: apuesta_almacenada | result: success | dni: {data[3]} | numero: {data[3]}.')
-
+        return decoded_data
         
 
     def recvall(self, sock):
@@ -57,7 +49,17 @@ class Server:
             data += chunk
 
         return  data 
+    
+    def sendall (self, socket, data):
+        total_sent = 0
+        total_legth = len(data)
 
+        while total_sent < total_legth:
+                sent = socket.send(data)
+                if sent == 0:
+                    raise RuntimeError("socket connection broken")
+                
+                total_sent += sent
         
     
     def run(self):
@@ -89,14 +91,27 @@ class Server:
         client socket will also be closed
         """
         try:
-            data_encoded = self.recvall(client_sock)
-            self.__create_bet_from_data(data_encoded)      
-            #client_sock.sendall("{}\n".format(msg).encode('utf-8'))
+            encoded_data = self.recvall(client_sock)
+            decoded_data = self.__decode_data(encoded_data)
+
+            self.__process_bet(decoded_data)    
+
+            dni = decoded_data[3]
+            bet_number = decoded_data[5]
+
+            
+            response = f"{dni}\n{bet_number}\n"
+            self.sendall(client_sock, response.encode('utf-8'))
 
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             client_sock.close()
+
+    def __process_bet(self, decoded_data):
+        bet = utils.Bet(decoded_data[0], decoded_data[1], decoded_data[2], decoded_data[3], decoded_data[4], decoded_data[5]) 
+        utils.store_bets([bet])
+        logging.info(f'action: apuesta_almacenada | result: success | dni: {decoded_data[3]} | numero: {decoded_data[3]}.')
 
     def __accept_new_connection(self):
         """
