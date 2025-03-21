@@ -2,7 +2,7 @@ import socket
 import logging
 import signal
 import sys
-
+import utils 
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -12,14 +12,14 @@ class Server:
         self._server_socket.listen(listen_backlog)
         self.shutdown = False
 
-        signal.signal(signal.SIGTERM, self._handle_sigterm)
+        signal.signal(signal.SIGTERM, self.__handle_sigterm)
 
-    def _cleanup(self):
+    def __cleanup(self):
         self._server_socket.close()
         logging.info("action: close_server_socket | result: success")
 
 
-    def _handle_sigterm(self, signum, frame):
+    def __handle_sigterm(self, signum, frame):
         """
         Signal handler for SIGTERM
 
@@ -29,8 +29,37 @@ class Server:
 
         logging.info("action: handle_sigterm | result: success")
         self.shutdown = True
-        self._cleanup()
+        self.__cleanup()
 
+    def __decode_message(self, data):
+        return data.decode('utf-8').rstrip().split('\n')
+
+    def __create_bet_from_data(self, data):
+
+        self.__decode_message(data)
+
+        if len(data) != 6:
+                raise ValueError("Invalid data length")
+        
+        bet = utils.Bet(data[0], data[1], data[2], data[3], data[4], data[5]) 
+        utils.store_bets([bet])
+        logging.info(f'action: apuesta_almacenada | result: success | dni: {data[3]} | numero: {data[3]}.')
+
+        
+
+    def recvall(self, sock):
+        data = b''
+        while True:
+            chunk = sock.recv(1024)
+            if not chunk:
+                break
+
+            data += chunk
+
+        return  data 
+
+        
+    
     def run(self):
         """
         Dummy Server loop
@@ -39,9 +68,7 @@ class Server:
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
         """
-
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
+        
         while self.shutdown is False:
             try:
                 client_sock = self.__accept_new_connection()
@@ -62,12 +89,10 @@ class Server:
         client socket will also be closed
         """
         try:
-            # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
-            addr = client_sock.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-            # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
+            data_encoded = self.recvall(client_sock)
+            self.__create_bet_from_data(data_encoded)      
+            #client_sock.sendall("{}\n".format(msg).encode('utf-8'))
+
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
