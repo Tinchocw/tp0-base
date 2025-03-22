@@ -1,10 +1,7 @@
 package common
 
 import (
-	"bytes"
 	"fmt"
-	"io"
-	"net"
 	"strings"
 	"time"
 
@@ -12,6 +9,8 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+
+	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/communication"
 
 	"github.com/op/go-logging"
 )
@@ -29,7 +28,7 @@ type ClientConfig struct {
 // Client Entity that encapsulates how
 type Client struct {
 	config      ClientConfig
-	conn        net.Conn
+	socket      *communication.Socket
 	stopChannel chan struct{}
 }
 
@@ -72,7 +71,8 @@ func (c *Client) loadUserBet() (UserBetConfig, error) {
 // failure, error is printed in stdout/stderr and exit 1
 // is returned
 func (c *Client) createClientSocket() error {
-	conn, err := net.Dial("tcp", c.config.ServerAddress)
+	var err error
+	c.socket, err = communication.NewSocket(c.config.ServerAddress)
 	if err != nil {
 		log.Criticalf(
 			"action: connect | result: fail | client_id: %v | error: %v",
@@ -80,8 +80,18 @@ func (c *Client) createClientSocket() error {
 			err,
 		)
 	}
-	c.conn = conn
 	return nil
+}
+
+func (c *Client) deleteClientSocket() {
+	err := c.socket.Close()
+	if err != nil {
+		log.Errorf("action: close_socket | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+	}
+
 }
 
 func (c *Client) deleteResources(signalChannel chan os.Signal) {
@@ -107,14 +117,6 @@ func (c *Client) deleteStopChannel() {
 
 }
 
-func (c *Client) deleteClientSocket() {
-	if c.conn != nil {
-		c.conn.Close()
-		log.Infof("action: close_socket | result: success | client_id: %v", c.config.ID)
-	}
-
-}
-
 func (c *Client) handleSignals(sigChan chan os.Signal) {
 	// Atach the signal channel to the signals SIGINT and SIGTERM
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -135,53 +137,6 @@ func (c *Client) isSignalReceived() bool {
 	default:
 	}
 	return false
-}
-
-func (c *Client) sendAll(data string) error {
-	var total_sent = 0
-	var total_length = len(data)
-
-	for total_sent < total_length {
-
-		sent, err := c.conn.Write([]byte(data[total_sent:]))
-		if err != nil {
-			return fmt.Errorf("error sending data: %v", err)
-		}
-		if sent == 0 {
-			return fmt.Errorf("Socket connection closed")
-		}
-
-		total_sent += sent
-	}
-	return nil
-}
-
-func (c *Client) recvAll(delimiter byte) ([]byte, error) {
-	var buffer bytes.Buffer
-	tmp := make([]byte, 1024)
-
-	for {
-
-		n, err := c.conn.Read(tmp)
-
-		if n > 0 {
-			// Escribimos los datos leídos (hasta n bytes) en el buffer principal
-			buffer.Write(tmp[:n])
-
-			if bytes.Contains(tmp[:n], []byte{delimiter}) {
-				break
-			}
-		}
-
-		if err != nil {
-			if err == io.EOF {
-				// Si se alcanza el final de la conexión, terminamos
-				break
-			}
-			return nil, fmt.Errorf("error reading data: %w", err)
-		}
-	}
-	return buffer.Bytes(), nil
 }
 
 func (c *Client) decodeData(data []byte) []string {
@@ -234,7 +189,7 @@ func (c *Client) StartClientLoop() {
 			userBet.Number,
 		)
 
-		err = c.sendAll(data)
+		err = c.socket.SendAll(data)
 
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
@@ -249,7 +204,7 @@ func (c *Client) StartClientLoop() {
 			userBet.Number,
 		)
 
-		msg, err := c.recvAll('\n')
+		msg, err := c.socket.RecvAll()
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
