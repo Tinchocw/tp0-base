@@ -90,27 +90,17 @@ func (c *Client) deleteClientSocket() {
 
 }
 
-func (c *Client) deleteResources(signalChannel chan os.Signal) {
-	c.deleteStopChannel()
-	c.deleteSignalChannel(signalChannel)
-	c.deleteClientSocket()
-}
-
-func (c *Client) deleteSignalChannel(signalChannel chan os.Signal) {
-	if signalChannel != nil {
-		signal.Stop(signalChannel)
-		close(signalChannel)
-		log.Infof("action: close_signal_channel | result: success | client_id: %v", c.config.ID)
-	}
-
-}
-
 func (c *Client) deleteStopChannel() {
 	if c.stopChannel != nil {
 		close(c.stopChannel)
 		log.Infof("action: close_notification_channel | result: success | client_id: %v", c.config.ID)
 	}
 
+}
+
+func (c *Client) deleteResources() {
+	c.deleteStopChannel()
+	c.deleteClientSocket()
 }
 
 func (c *Client) handleSignals(sigChan chan os.Signal) {
@@ -120,7 +110,7 @@ func (c *Client) handleSignals(sigChan chan os.Signal) {
 	go func() {
 		<-sigChan
 		log.Infof("action: signal_received | result: success | client_id: %v", c.config.ID)
-		c.deleteResources(sigChan)
+		c.deleteResources()
 	}()
 
 }
@@ -220,6 +210,6 @@ func (c *Client) StartClientLoop() {
 		time.Sleep(c.config.LoopPeriod)
 	}
 
-	c.deleteResources(signalChannel)
+	c.deleteResources()
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
