@@ -66,10 +66,6 @@ func (c *Client) loadUserBet() (UserBetConfig, error) {
 		Number:   number,
 	}, nil
 }
-
-// CreateClientSocket Initializes client socket. In case of
-// failure, error is printed in stdout/stderr and exit 1
-// is returned
 func (c *Client) createClientSocket() error {
 	var err error
 	c.socket, err = communication.NewSocket(c.config.ServerAddress)
