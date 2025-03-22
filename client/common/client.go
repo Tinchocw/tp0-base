@@ -54,6 +54,7 @@ func NewClient(config ClientConfig) *Client {
 func (c *Client) loadUserBet() (UserBetConfig, error) {
 
 	number, err := strconv.Atoi(os.Getenv("NUMERO"))
+
 	if err != nil {
 		return UserBetConfig{}, fmt.Errorf("invalid NUMERO: %v", err)
 	}
