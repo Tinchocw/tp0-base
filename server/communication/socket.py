@@ -52,7 +52,8 @@ class Socket:
             utils.store_bets(bets)
             logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}.')
             
-            self.__sendall(client_sock, len(bets))
+            encoded_response = self.decoder.encode_response(len(bets))
+            self.__sendall(client_sock, encoded_response)
         
         except BrokenPipeError as e:
             logging.error(f"action: send_message | result: fail | error: BrokenPipeError: {e}")
