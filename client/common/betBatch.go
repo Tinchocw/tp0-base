@@ -14,8 +14,12 @@ func (b *BetBatch) AddBet(bet Bet) {
 
 func (b *BetBatch) Serialize() []byte {
 	var result string
-	for _, bet := range b.Bets {
-		result += bet.Serialize() + "&"
+	for i, bet := range b.Bets {
+		result += bet.Serialize()
+
+		if i < len(b.Bets)-1 {
+			result += "&"
+		}
 	}
 	result += "\n"
 	return []byte(result)
