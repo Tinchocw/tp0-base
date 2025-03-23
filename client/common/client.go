@@ -1,13 +1,12 @@
 package common
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/communication"
@@ -32,14 +31,6 @@ type Client struct {
 	stopChannel chan struct{}
 }
 
-type UserBetConfig struct {
-	Name     string
-	LastName string
-	Document string
-	Birth    string
-	Number   int
-}
-
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
@@ -50,22 +41,6 @@ func NewClient(config ClientConfig) *Client {
 	return client
 }
 
-func (c *Client) loadUserBet() (UserBetConfig, error) {
-
-	number, err := strconv.Atoi(os.Getenv("NUMERO"))
-
-	if err != nil {
-		return UserBetConfig{}, fmt.Errorf("invalid NUMERO: %v", err)
-	}
-
-	return UserBetConfig{
-		Name:     os.Getenv("NOMBRE"),
-		LastName: os.Getenv("APELLIDO"),
-		Document: os.Getenv("DOCUMENTO"),
-		Birth:    os.Getenv("NACIMIENTO"),
-		Number:   number,
-	}, nil
-}
 func (c *Client) createClientSocket() error {
 	var err error
 	c.socket, err = communication.NewSocket(c.config.ServerAddress)
@@ -125,6 +100,7 @@ func (c *Client) isSignalReceived() bool {
 	return false
 }
 
+// Esta función la tengo que sacar de acá
 func (c *Client) decodeData(data []byte) []string {
 
 	dataString := string(data)
@@ -138,6 +114,23 @@ func (c *Client) decodeData(data []byte) []string {
 	return parts
 }
 
+func (c *Client) decodeResponse(data []byte) int {
+	// Convierte los datos de bytes a string
+	dataString := string(data)
+
+	// Elimina el salto de línea al final
+	dataString = strings.TrimSpace(dataString)
+
+	// Convierte la cadena a un entero
+	betAmount, err := strconv.Atoi(dataString)
+	if err != nil {
+		log.Errorf("action: decode_response | result: fail | error: %v", err)
+		return 0 // Devuelve un valor por defecto en caso de error
+	}
+
+	return betAmount
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
 	signalChannel := make(chan os.Signal, 1) // This channel will receive the signals
@@ -145,52 +138,47 @@ func (c *Client) StartClientLoop() {
 
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
+	parser, err := NewParser("bets.txt", 10, c.config.ID)
+	if err != nil {
+		log.Errorf("action: create_bet_parser | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return
+	}
 
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
-		// Create the connection the server in every loop iteration. Send anj
 
 		isReceived := c.isSignalReceived()
 		if isReceived {
 			return
 		}
 
-		userBet, err := c.loadUserBet()
+		batch, err := parser.ReadBatch()
 		if err != nil {
-			log.Errorf("action: load_clients_bet | result: fail | client_id: %v | error: %v",
+			log.Errorf("action: read_batch | result: fail | client_id: %v | error: %v",
 				c.config.ID,
 				err,
 			)
+			parser.Close()
 			return
 		}
+
+		batchSerialized := batch.Serialize()
 
 		c.createClientSocket()
 
-		var data = fmt.Sprintf(
-			"%v,%s,%s,%s,%s,%d\n",
-			c.config.ID,
-			userBet.Name,
-			userBet.LastName,
-			userBet.Document,
-			userBet.Birth,
-			userBet.Number,
-		)
-
-		err = c.socket.SendAll(data)
+		err = c.socket.SendAll(batchSerialized)
 
 		if err != nil {
-			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
+			log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v",
 				c.config.ID,
 				err,
 			)
 			return
 		}
 
-		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %d",
-			userBet.Document,
-			userBet.Number,
-		)
-
-		msg, err := c.socket.RecvAll()
+		response, err := c.socket.RecvAll()
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
@@ -198,11 +186,9 @@ func (c *Client) StartClientLoop() {
 			)
 			return
 		}
-		decodedData := c.decodeData(msg)
-		log.Infof("action: apuesta_almacenada | result: success | dni: %v | numero: %v",
-			decodedData[0],
-			decodedData[1],
-		)
+
+		amount := c.decodeData(response)
+		log.Infof("action: apuestas_almacenada | result: success | cantidad: %v", amount)
 
 		c.deleteClientSocket()
 
