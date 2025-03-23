@@ -1,6 +1,7 @@
 package common
 
 import (
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -156,13 +157,24 @@ func (c *Client) StartClientLoop() {
 		}
 
 		batch, err := parser.ReadBatch()
+		log.Infof("batch: %v", batch)
 		if err != nil {
+			if err == io.EOF {
+				log.Infof("action: end_of_file | result: success | client_id: %v", c.config.ID)
+				break
+			}
 			log.Errorf("action: read_batch | result: fail | client_id: %v | error: %v",
 				c.config.ID,
 				err,
 			)
 			parser.Close()
 			return
+
+		}
+		// Verifica si el lote está vacío
+		if len(batch.Bets) == 0 {
+			log.Warningf("action: empty_batch | result: skip | client_id: %v", c.config.ID)
+			continue
 		}
 
 		batchSerialized := batch.Serialize()
