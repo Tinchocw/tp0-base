@@ -2,7 +2,6 @@ package common
 
 import (
 	"io"
-	"strconv"
 	"strings"
 	"time"
 
@@ -102,35 +101,14 @@ func (c *Client) isSignalReceived() bool {
 	return false
 }
 
-// Esta función la tengo que sacar de acá
-func (c *Client) decodeData(data []byte) []string {
-
-	dataString := string(data)
-
-	parts := strings.Split(dataString, ",")
-
-	for i := range parts {
-		parts[i] = strings.TrimSpace(parts[i])
-	}
-
-	return parts
-}
-
-func (c *Client) decodeResponse(data []byte) int {
+func (c *Client) decodeResponse(data []byte) string {
 	// Convierte los datos de bytes a string
 	dataString := string(data)
 
 	// Elimina el salto de línea al final
 	dataString = strings.TrimSpace(dataString)
 
-	// Convierte la cadena a un entero
-	betAmount, err := strconv.Atoi(dataString)
-	if err != nil {
-		log.Errorf("action: decode_response | result: fail | error: %v", err)
-		return 0 // Devuelve un valor por defecto en caso de error
-	}
-
-	return betAmount
+	return dataString
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
