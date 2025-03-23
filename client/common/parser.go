@@ -16,13 +16,13 @@ type Parser struct {
 }
 
 func NewParser(agency string, maxBatch int) (*Parser, error) {
-	filename := fmt.Sprintf("agency-%s", agency)
+	filename := fmt.Sprintf("/data/agency-%s.csv", agency)
+	log.Infof("Opening file %s", filename)
 	file, err := os.Open(filename)
 	if err != nil {
 
 		return nil, err
 	}
-	defer file.Close()
 
 	agency_, err := strconv.Atoi(agency)
 	if err != nil {

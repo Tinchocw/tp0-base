@@ -24,7 +24,7 @@ def add_clients(num_clients, data):
         environment = [f'CLI_ID={i}']
         volumes = [
             './client/config.yaml:/config.yaml',
-            f'./data/agency-{i}.csv:/data/agency-{i}.csv' 
+            f'./.data/agency-{i}.csv:/data/agency-{i}.csv' 
         ]
 
         for key, value in hardcoded_env_vars.items():
