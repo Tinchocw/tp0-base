@@ -16,7 +16,7 @@ class Socket:
         while True:
             chunk = client_socket.recv(1024)
             if not chunk:
-                break
+                raise BrokenPipeError("socket connection broken")
 
             data += chunk
 
@@ -54,7 +54,9 @@ class Socket:
 
             
             self.__sendall(client_sock, self.decoder.encode_data(bet))
-
+        
+        except BrokenPipeError as e:
+            logging.error(f"action: send_message | result: fail | error: BrokenPipeError: {e}")
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
