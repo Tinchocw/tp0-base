@@ -47,13 +47,12 @@ class Socket:
         """
         try:
             encoded_data = self.__recvall(client_sock)
-            bet = self.decoder.decode_data(encoded_data)
-
-            utils.store_bets([bet])
-            logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}.')
-
+            bets = self.decoder.decode_bets(encoded_data)
             
-            self.__sendall(client_sock, self.decoder.encode_data(bet))
+            utils.store_bets(bets)
+            logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}.')
+            
+            self.__sendall(client_sock, len(bets))
         
         except BrokenPipeError as e:
             logging.error(f"action: send_message | result: fail | error: BrokenPipeError: {e}")
