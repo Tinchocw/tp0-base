@@ -33,7 +33,7 @@ func NewBetFromLine(line string, agency int) (*Bet, error) {
 		return nil, fmt.Errorf("invalid bet line: %s", line)
 	}
 
-	number, err := strconv.Atoi(fields[4])
+	number, err := strconv.Atoi(strings.TrimSpace(fields[4]))
 
 	if err != nil {
 		return nil, fmt.Errorf("invalid number: %s", fields[4])
