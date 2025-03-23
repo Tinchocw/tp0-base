@@ -107,7 +107,7 @@ func (c *Client) decodeResponse(data []byte) string {
 
 	// Elimina el salto de línea al final
 	dataString = strings.TrimSpace(dataString)
-
+	log.Infof("action: decode_response | result: success | data: %v", dataString)
 	return dataString
 }
 
@@ -135,7 +135,6 @@ func (c *Client) StartClientLoop() {
 		}
 
 		batch, err := parser.ReadBatch()
-		log.Infof("batch: %v", batch)
 		if err != nil {
 			if err == io.EOF {
 				log.Infof("action: end_of_file | result: success | client_id: %v", c.config.ID)
