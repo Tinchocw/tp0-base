@@ -22,6 +22,7 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
+	MaxAmount     int
 }
 
 // Client Entity that encapsulates how
@@ -138,7 +139,7 @@ func (c *Client) StartClientLoop() {
 
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
-	parser, err := NewParser("bets.txt", 10, c.config.ID)
+	parser, err := NewParser(c.config.ID, c.config.MaxAmount)
 	if err != nil {
 		log.Errorf("action: create_bet_parser | result: fail | client_id: %v | error: %v",
 			c.config.ID,

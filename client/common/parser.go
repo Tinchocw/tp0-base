@@ -2,6 +2,7 @@ package common
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -14,7 +15,8 @@ type Parser struct {
 	agency    int
 }
 
-func NewParser(filename string, maxBatch int, agency string) (*Parser, error) {
+func NewParser(agency string, maxBatch int) (*Parser, error) {
+	filename := fmt.Sprintf("agency-%s", agency)
 	file, err := os.Open(filename)
 	if err != nil {
 
