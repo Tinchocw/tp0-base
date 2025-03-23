@@ -200,7 +200,7 @@ func (c *Client) StartClientLoop() {
 			return
 		}
 
-		amount := c.decodeData(response)
+		amount := c.decodeResponse(response)
 		log.Infof("action: apuestas_almacenada | result: success | cantidad: %v", amount)
 
 		c.deleteClientSocket()
