@@ -22,6 +22,10 @@ def add_clients(num_clients, data):
     for i in range(1, num_clients + 1):
         client_name = f'client{i}'
         environment = [f'CLI_ID={i}']
+        volumes = [
+            './client/config.yaml:/config.yaml',
+            f'./data/agency-{i}.csv:/data/agency-{i}.csv' 
+        ]
 
         for key, value in hardcoded_env_vars.items():
             environment.append(f'{key}={value}')
@@ -32,7 +36,7 @@ def add_clients(num_clients, data):
             'entrypoint': '/client',
             'environment': environment,
             'networks': ['testing_net'],
-            'volumes': ['./client/config.yaml:/config.yaml'],
+            'volumes': volumes,
             'depends_on': ['server']
         }
     
