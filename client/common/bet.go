@@ -44,5 +44,5 @@ func NewBetFromLine(line string, agency int) (*Bet, error) {
 
 func (b *Bet) Serialize() string {
 
-	return fmt.Sprintf("%s,%s,%s,%s,%s", b.Name, b.LastName, b.Document, b.Birth, fmt.Sprint(b.Number))
+	return fmt.Sprintf("%s,%s,%s,%s,%s,%s", fmt.Sprint(b.Agency), b.Name, b.LastName, b.Document, b.Birth, fmt.Sprint(b.Number))
 }
