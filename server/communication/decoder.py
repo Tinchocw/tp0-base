@@ -1,4 +1,4 @@
-from server.common import utils
+from common import utils
 
 class Decoder:
     def __init__(self):

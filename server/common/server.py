@@ -1,6 +1,5 @@
 import logging
 import signal
-from common import utils
 from communication.socket import Socket
 
 

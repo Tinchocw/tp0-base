@@ -1,7 +1,7 @@
 import socket
 import logging
 from communication.decoder import Decoder
-from server.common import utils
+from common import utils
 
 
 class Socket:
