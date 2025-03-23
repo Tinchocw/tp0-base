@@ -50,7 +50,7 @@ class Socket:
             bets = self.decoder.decode_bets(encoded_data)
             
             utils.store_bets(bets)
-            logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}.')
+            logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
             
             encoded_response = self.decoder.encode_response(len(bets))
             self.__sendall(client_sock, encoded_response)
