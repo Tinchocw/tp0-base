@@ -32,7 +32,7 @@ class Socket:
         while total_sent < total_legth:
                 sent = client_socket.send(data[total_sent:]) 
                 if sent == 0:
-                    raise RuntimeError("socket connection broken")
+                    raise BrokenPipeError("socket connection broken")
                 
                 total_sent += sent
 
