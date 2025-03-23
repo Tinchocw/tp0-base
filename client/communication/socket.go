@@ -20,13 +20,13 @@ func NewSocket(address string) (*Socket, error) {
 	return &Socket{conn: conn}, nil
 }
 
-func (s *Socket) SendAll(data string) error {
+func (s *Socket) SendAll(data []byte) error {
 	var total_sent = 0
 	var total_length = len(data)
 
 	for total_sent < total_length {
 
-		sent, err := s.conn.Write([]byte(data[total_sent:]))
+		sent, err := s.conn.Write((data[total_sent:]))
 		if err != nil {
 			return fmt.Errorf("error sending data: %v", err)
 		}
