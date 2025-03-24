@@ -2,14 +2,14 @@ import logging
 import signal
 from communication.socket import Socket
 from common import utils
-from communication.decoder import BetDeocdeError, Decoder
+from server.communication.serializer import BetDeserializeError, Serializer
 
 
 class Server:
     def __init__(self, port, listen_backlog):
         self.socket = Socket(port, listen_backlog)
         self.shutdown = False
-        self.decoder = Decoder()
+        self.serializer = Serializer()
 
 
         signal.signal(signal.SIGTERM, self.__handle_sigterm)
@@ -40,18 +40,18 @@ class Server:
         """
         try:
             encoded_data = client_socket.recvall()
-            bets = self.decoder.decode_bets(encoded_data)
+            bets = self.serializer.deserialize_bets(encoded_data)
             
             utils.store_bets(bets)
             logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
             
-            encoded_response = self.decoder.encode_response(len(bets), 'success')
-            client_socket.sendall(encoded_response)
+            serialize_response = self.serializer.serialize_response(len(bets), 'success')
+            client_socket.sendall(serialize_response)
         
-        except BetDeocdeError as e:
+        except BetDeserializeError as e:
             logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
-            encoded_response = self.decoder.encode_response(0, 'fail')
-            client_socket.sendall(encoded_response)
+            serialize_response = self.serializer.serialize_response(0, 'fail')
+            client_socket.sendall(serialize_response)
             
         except BrokenPipeError as e:
             logging.error(f"action: send_message | result: fail | error: BrokenPipeError: {e}")
