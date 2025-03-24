@@ -45,12 +45,12 @@ class Server:
             utils.store_bets(bets)
             logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
             
-            encoded_response = self.decoder.encode_response(len(bets), 'OK')
+            encoded_response = self.decoder.encode_response(len(bets), 'success')
             client_socket.sendall(encoded_response)
         
         except BetDeocdeError as e:
             logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
-            encoded_response = self.decoder.encode_response(0, 'ERROR')
+            encoded_response = self.decoder.encode_response(0, 'fail')
             client_socket.sendall(encoded_response)
             
         except BrokenPipeError as e:

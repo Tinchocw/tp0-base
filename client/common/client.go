@@ -2,7 +2,6 @@ package common
 
 import (
 	"io"
-	"strings"
 	"time"
 
 	"os"
@@ -101,16 +100,6 @@ func (c *Client) isSignalReceived() bool {
 	return false
 }
 
-func (c *Client) decodeResponse(data []byte) string {
-	// Convierte los datos de bytes a string
-	dataString := string(data)
-
-	// Elimina el salto de línea al final
-	dataString = strings.TrimSpace(dataString)
-	log.Infof("action: decode_response | result: success | data: %v", dataString)
-	return dataString
-}
-
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
 	signalChannel := make(chan os.Signal, 1) // This channel will receive the signals
@@ -118,6 +107,7 @@ func (c *Client) StartClientLoop() {
 
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
+
 	parser, err := NewParser(c.config.ID, c.config.MaxAmount)
 	if err != nil {
 		log.Errorf("action: create_bet_parser | result: fail | client_id: %v | error: %v",
@@ -126,6 +116,8 @@ func (c *Client) StartClientLoop() {
 		)
 		return
 	}
+
+	serializer := communication.NewSerializer()
 
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 
@@ -154,7 +146,7 @@ func (c *Client) StartClientLoop() {
 			continue
 		}
 
-		batchSerialized := batch.Serialize()
+		batchSerialized := serializer.Serialize(batch)
 
 		c.createClientSocket()
 
@@ -177,8 +169,16 @@ func (c *Client) StartClientLoop() {
 			return
 		}
 
-		amount := c.decodeResponse(response)
-		log.Infof("action: apuestas_almacenada | result: success | cantidad: %v", amount)
+		result, amount, err := serializer.Deserialize(response)
+		if err != nil {
+			log.Errorf("action: deserialize_response | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return
+		}
+
+		log.Infof("action: apuestas_almacenada | result: %v | cantidad: %v", result, amount)
 
 		c.deleteClientSocket()
 

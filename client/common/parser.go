@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"strconv"
+
+	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/communication"
 )
 
 type Parser struct {
@@ -37,8 +39,8 @@ func NewParser(agency string, maxBatch int) (*Parser, error) {
 	}, nil
 }
 
-func (p *Parser) ReadBatch() (*BetBatch, error) {
-	batch := NewBetBatch()
+func (p *Parser) ReadBatch() (*communication.BetBatch, error) {
+	batch := communication.NewBetBatch()
 
 	for i := 0; i < p.maxBatch; i++ {
 		line, err := p.bufReader.ReadString('\n')
@@ -53,7 +55,7 @@ func (p *Parser) ReadBatch() (*BetBatch, error) {
 			return nil, err
 		}
 
-		bet, err := NewBetFromLine(line, p.agency)
+		bet, err := communication.NewBetFromLine(line, p.agency)
 		if err != nil {
 			log.Warning(err)
 			continue
