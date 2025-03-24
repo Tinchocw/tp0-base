@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+const betHeader = "BET"
+const endHeader = "END"
+
 // Serializer is a placeholder struct for serialization logic
 type Serializer struct{}
 
@@ -12,8 +15,10 @@ func NewSerializer() *Serializer {
 	return &Serializer{}
 }
 
-func (*Serializer) Serialize(betBatch []Bet) []byte {
+func (*Serializer) SerializeBet(betBatch []Bet) []byte {
 	var result string
+	result += betHeader + ","
+
 	for i, bet := range betBatch {
 		result += bet.Serialize()
 
@@ -23,6 +28,10 @@ func (*Serializer) Serialize(betBatch []Bet) []byte {
 	}
 	result += "\n"
 	return []byte(result)
+}
+
+func (*Serializer) SerializeEnd() []byte {
+	return []byte(endHeader + "\n")
 }
 
 func (*Serializer) Deserialize(data []byte) (string, string, error) {

@@ -141,7 +141,7 @@ func (c *Client) SendAllBets() {
 
 		}
 
-		batchSerialized := serializer.Serialize(batch)
+		batchSerialized := serializer.SerializeBet(batch)
 
 		c.createClientSocket()
 
