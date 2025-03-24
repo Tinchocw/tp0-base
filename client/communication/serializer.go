@@ -12,8 +12,17 @@ func NewSerializer() *Serializer {
 	return &Serializer{}
 }
 
-func (*Serializer) Serialize(b *BetBatch) []byte {
-	return b.Serialize()
+func (*Serializer) Serialize(betBatch []Bet) []byte {
+	var result string
+	for i, bet := range betBatch {
+		result += bet.Serialize()
+
+		if i < len(betBatch)-1 {
+			result += "&"
+		}
+	}
+	result += "\n"
+	return []byte(result)
 }
 
 func (*Serializer) Deserialize(data []byte) (string, string, error) {

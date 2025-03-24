@@ -39,15 +39,16 @@ func NewParser(agency string, maxBatch int) (*Parser, error) {
 	}, nil
 }
 
-func (p *Parser) ReadBatch() (*communication.BetBatch, error) {
-	batch := communication.NewBetBatch()
+func (p *Parser) ReadBatch() ([]communication.Bet, error) {
+	//batch := communication.NewBetBatch()
+	batch := make([]communication.Bet, 0)
 
 	for i := 0; i < p.maxBatch; i++ {
 		line, err := p.bufReader.ReadString('\n')
 
 		if err != nil {
 			if err == io.EOF {
-				if len(batch.Bets) > 0 {
+				if len(batch) > 0 {
 					return batch, nil
 				}
 				return nil, io.EOF // Devuelve EOF si no hay apuestas
@@ -60,8 +61,8 @@ func (p *Parser) ReadBatch() (*communication.BetBatch, error) {
 			log.Warning(err)
 			continue
 		}
-
-		batch.AddBet(*bet)
+		batch = append(batch, *bet)
+		//batch.AddBet(*bet)
 	}
 
 	return batch, nil
