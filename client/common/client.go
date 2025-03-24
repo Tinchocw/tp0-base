@@ -105,6 +105,8 @@ func (c *Client) SendAllBets() {
 	signalChannel := make(chan os.Signal, 1) // This channel will receive the signals
 	c.handleSignals(signalChannel)
 
+	var err error = nil
+
 	parser, err := NewParser(c.config.ID, c.config.MaxAmount)
 	if err != nil {
 		log.Errorf("action: create_bet_parser | result: fail | client_id: %v | error: %v",
@@ -164,7 +166,7 @@ func (c *Client) SendAllBets() {
 			return
 		}
 
-		result, amount, err := serializer.Deserialize(response)
+		result, amount, err := serializer.DeserializeBatchAmount(response)
 		if err != nil {
 			log.Errorf("action: deserialize_response | result: fail | client_id: %v | error: %v",
 				c.config.ID,
@@ -181,6 +183,57 @@ func (c *Client) SendAllBets() {
 		time.Sleep(c.config.LoopPeriod)
 	}
 
+	err = c.socket.SendAll(serializer.SerializeEnd())
+	if err != nil {
+		log.Errorf("action: send_end | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+	}
+
+	err = c.handleWinnerRequest(*serializer)
+	if err != nil {
+		log.Errorf("action: send_winner | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+	}
+
 	c.deleteResources()
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+}
+
+func (c *Client) handleWinnerRequest(serializer communication.Serializer) error {
+
+	err := c.socket.SendAll(serializer.SerializeWin())
+	if err != nil {
+		log.Errorf("action: send_winner | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return err
+	}
+
+	winnerSerialize, err := c.socket.RecvAll()
+	if err != nil {
+		log.Errorf("action: receive_winner | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return err
+	}
+
+	winnerAmount, err := serializer.DeserializeWinner(winnerSerialize)
+	if err != nil {
+		log.Errorf("action: deserialize_winner | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return err
+	}
+
+	log.Infof("action: winner_received | result: success | client_id: %v | amount: %v", c.config.ID, winnerAmount)
+
+	return nil
+
 }
