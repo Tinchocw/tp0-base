@@ -1,5 +1,10 @@
 from common import utils
 
+BET_HEADER = "BET"
+END_HEADER = "END"
+WINNER_HEADER = "WIN"
+
+
 class BetDeserializeError(Exception):
     """Excepción personalizada para errores de decodificación de apuestas."""
     def __init__(self, message):

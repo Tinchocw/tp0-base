@@ -10,11 +10,14 @@ import (
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/communication"
 )
 
+const maxSize = 8192 // 8KB
+
 type Parser struct {
-	file      *os.File
-	maxBatch  int
-	bufReader *bufio.Reader
-	agency    int
+	file         *os.File
+	maxBatch     int
+	bufReader    *bufio.Reader
+	agency       int
+	leftoverLine string
 }
 
 func NewParser(agency string, maxBatch int) (*Parser, error) {
@@ -40,8 +43,26 @@ func NewParser(agency string, maxBatch int) (*Parser, error) {
 }
 
 func (p *Parser) ReadBatch() ([]communication.Bet, error) {
-	//batch := communication.NewBetBatch()
 	batch := make([]communication.Bet, 0)
+
+	totalSize := 0
+	header := "BET "
+	totalSize += len(header)
+
+	// Procesar línea sobrante de la ejecución anterior, si existe
+	if p.leftoverLine != "" {
+		if totalSize+len(p.leftoverLine) > maxSize {
+			return batch, nil // Si la línea ya supera el límite, no se puede procesar
+		}
+		bet, err := communication.NewBetFromLine(p.leftoverLine, p.agency)
+		if err == nil {
+			batch = append(batch, *bet)
+			totalSize += len(p.leftoverLine)
+		} else {
+			log.Warning(err)
+		}
+		p.leftoverLine = ""
+	}
 
 	for i := 0; i < p.maxBatch; i++ {
 		line, err := p.bufReader.ReadString('\n')
@@ -56,13 +77,19 @@ func (p *Parser) ReadBatch() ([]communication.Bet, error) {
 			return nil, err
 		}
 
+		// Si agregar la línea supera el límite, guardarla para la próxima llamada
+		if totalSize+len(line) > maxSize {
+			p.leftoverLine = line
+			break
+		}
+
 		bet, err := communication.NewBetFromLine(line, p.agency)
 		if err != nil {
 			log.Warning(err)
 			continue
 		}
 		batch = append(batch, *bet)
-		//batch.AddBet(*bet)
+		totalSize += len(line)
 	}
 
 	return batch, nil
