@@ -113,6 +113,7 @@ func (c *Client) SendAllBets() {
 		)
 		return
 	}
+	defer parser.Close()
 
 	serializer := communication.NewSerializer()
 	endOfFile := false
@@ -136,7 +137,6 @@ func (c *Client) SendAllBets() {
 				c.config.ID,
 				err,
 			)
-			parser.Close()
 			return
 
 		}

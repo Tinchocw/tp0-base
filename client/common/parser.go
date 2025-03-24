@@ -71,7 +71,10 @@ func (p *Parser) ReadBatch() ([]communication.Bet, error) {
 
 func (p *Parser) Close() error {
 	if p.file != nil {
+		log.Infof("action: close_file | result: success | file: %v", p.file.Name())
 		return p.file.Close()
+	} else {
+		log.Infof("action: close_file | result: fail | file: %v", p.file.Name())
 	}
 	return nil
 }
