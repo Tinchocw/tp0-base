@@ -17,7 +17,7 @@ class Socket:
         return cls(address, listen_backlog)
     
     @classmethod
-    def create_from_socket(cls, address, socket):
+    def from_socket(cls, address, socket):
         return cls(address, None, socket)
     
 
@@ -58,7 +58,7 @@ class Socket:
         logging.info('action: accept_connections | result: in_progress')
         c, addr = self._socket.accept()
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-        return Socket.create_from_socket(addr, c)
+        return Socket.from_socket(addr, c)
     
 
     def close(self):

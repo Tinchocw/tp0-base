@@ -1,13 +1,20 @@
 from common import utils
 
+class BetDeocdeError(Exception):
+    """Excepción personalizada para errores de decodificación de apuestas."""
+    def __init__(self, message):
+        super().__init__(message)
+
+     
 class Decoder:
     def __init__(self):
         pass 
     
+        
     def __decode_bet(self, data):
         decoded_data = data.split(',')
         if len(decoded_data) != 6:
-                raise ValueError("Invalid data length")
+                raise BetDeocdeError("Invalid data length")
 
         return utils.Bet(decoded_data[0], decoded_data[1], decoded_data[2], decoded_data[3], decoded_data[4], decoded_data[5]) 
     
@@ -22,5 +29,5 @@ class Decoder:
         return bets
     
 
-    def encode_response(self, bet_amount ):
-        return f"{bet_amount}\n".encode('utf-8')
+    def encode_response(self, bet_amount, status):
+        return f"{status},{bet_amount}\n".encode('utf-8')
