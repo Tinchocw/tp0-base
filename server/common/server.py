@@ -2,7 +2,7 @@ import logging
 import signal
 from communication.socket import Socket
 from common import utils
-from server.communication.serializer import BetDeserializeError, Serializer
+from communication.serializer import BetDeserializeError, Serializer
 
 
 class Server:
