@@ -137,6 +137,7 @@ func (c *Client) SendAllBets() {
 				err,
 			)
 			parser.Close()
+			return
 
 		}
 
