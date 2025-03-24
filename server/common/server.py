@@ -1,8 +1,8 @@
 import logging
 import signal
 from communication.socket import Socket
-from server.common import utils
-from server.communication.decoder import BetDeocdeError, Decoder
+from common import utils
+from communication.decoder import BetDeocdeError, Decoder
 
 
 class Server:

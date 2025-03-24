@@ -3,13 +3,13 @@ import logging
 
 
 class Socket:
-    def __init__(self, address, listen_backlog, socket=None):
-        if socket is None:
+    def __init__(self, address, listen_backlog, sock=None):
+        if sock is None:
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._socket.bind(('', address))
             self._socket.listen(listen_backlog)
         else:
-            self._socket = socket
+            self._socket = sock
 
 
     @classmethod
@@ -24,7 +24,7 @@ class Socket:
     def recvall(self):
         data = b''
         while True:
-            chunk = self.recv(1024)
+            chunk = self._socket.recv(1024)
             if not chunk:
                 raise BrokenPipeError("socket connection broken")
 
@@ -40,7 +40,7 @@ class Socket:
         total_legth = len(data) 
 
         while total_sent < total_legth:
-                sent = self.send(data[total_sent:]) 
+                sent = self._socket.send(data[total_sent:]) 
                 if sent == 0:
                     raise BrokenPipeError("socket connection broken")
                 
