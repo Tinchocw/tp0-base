@@ -105,7 +105,7 @@ func (c *Client) SendAllBets() {
 	signalChannel := make(chan os.Signal, 1) // This channel will receive the signals
 	c.handleSignals(signalChannel)
 
-	parser, err := NewParser(c.config.ID, c.config.MaxAmount)
+	parser, err := NewParser(c.config.ID, c.config.MaxAmount, maxSize)
 	if err != nil {
 		log.Errorf("action: create_bet_parser | result: fail | client_id: %v | error: %v",
 			c.config.ID,
