@@ -46,11 +46,11 @@ class Serializer:
         return haedar
     
     def deserialize_end_request(self, data):
-        haedar = data.decode('utf-8').rstrip().split(' ', 1)[0]
+        haedar, agency_id = data.decode('utf-8').rstrip().split(' ', 1)
         if haedar != END_HEADER:
             raise BetDeserializeError("Invalid header, expected END")
         
-        return haedar
+        return int(agency_id)
     
 
     def serialize_response(self, bet_amount, status):
