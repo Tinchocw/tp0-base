@@ -100,13 +100,10 @@ func (c *Client) isSignalReceived() bool {
 	return false
 }
 
-// StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client) StartClientLoop() {
+// SendAllBets Send messages to the client until some time threshold is met
+func (c *Client) SendAllBets() {
 	signalChannel := make(chan os.Signal, 1) // This channel will receive the signals
 	c.handleSignals(signalChannel)
-
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
 
 	parser, err := NewParser(c.config.ID, c.config.MaxAmount)
 	if err != nil {
@@ -118,8 +115,9 @@ func (c *Client) StartClientLoop() {
 	}
 
 	serializer := communication.NewSerializer()
+	endOfFile := false
 
-	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
+	for !endOfFile {
 
 		isReceived := c.isSignalReceived()
 		if isReceived {
@@ -130,20 +128,16 @@ func (c *Client) StartClientLoop() {
 		if err != nil {
 			if err == io.EOF {
 				log.Infof("action: end_of_file | result: success | client_id: %v", c.config.ID)
-				break
+				endOfFile = true
+				continue
+
 			}
 			log.Errorf("action: read_batch | result: fail | client_id: %v | error: %v",
 				c.config.ID,
 				err,
 			)
 			parser.Close()
-			return
 
-		}
-		// Verifica si el lote está vacío
-		if len(batch.Bets) == 0 {
-			log.Warningf("action: empty_batch | result: skip | client_id: %v", c.config.ID)
-			continue
 		}
 
 		batchSerialized := serializer.Serialize(batch)
