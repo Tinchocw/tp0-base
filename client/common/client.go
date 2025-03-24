@@ -107,7 +107,7 @@ func (c *Client) SendAllBets() {
 
 	var err error = nil
 
-	parser, err := NewParser(c.config.ID, c.config.MaxAmount)
+	parser, err := NewParser(c.config.ID, c.config.MaxAmount, maxSize)
 	if err != nil {
 		log.Errorf("action: create_bet_parser | result: fail | client_id: %v | error: %v",
 			c.config.ID,

@@ -18,9 +18,10 @@ type Parser struct {
 	bufReader    *bufio.Reader
 	agency       int
 	leftoverLine string
+	maxSize      int
 }
 
-func NewParser(agency string, maxBatch int) (*Parser, error) {
+func NewParser(agency string, maxBatch int, maxSize int) (*Parser, error) {
 	filename := fmt.Sprintf("/data/agency-%s.csv", agency)
 	log.Infof("Opening file %s", filename)
 	file, err := os.Open(filename)
@@ -35,10 +36,12 @@ func NewParser(agency string, maxBatch int) (*Parser, error) {
 	}
 
 	return &Parser{
-		file:      file,
-		maxBatch:  maxBatch,
-		bufReader: bufio.NewReader(file),
-		agency:    agency_,
+		file:         file,
+		maxBatch:     maxBatch,
+		bufReader:    bufio.NewReader(file),
+		agency:       agency_,
+		leftoverLine: "",
+		maxSize:      maxSize,
 	}, nil
 }
 
@@ -51,7 +54,7 @@ func (p *Parser) ReadBatch() ([]communication.Bet, error) {
 
 	// Procesar línea sobrante de la ejecución anterior, si existe
 	if p.leftoverLine != "" {
-		if totalSize+len(p.leftoverLine) > maxSize {
+		if totalSize+len(p.leftoverLine) > p.maxSize {
 			return batch, nil // Si la línea ya supera el límite, no se puede procesar
 		}
 		bet, err := communication.NewBetFromLine(p.leftoverLine, p.agency)
@@ -78,7 +81,7 @@ func (p *Parser) ReadBatch() ([]communication.Bet, error) {
 		}
 
 		// Si agregar la línea supera el límite, guardarla para la próxima llamada
-		if totalSize+len(line) > maxSize {
+		if totalSize+len(line) > p.maxSize {
 			p.leftoverLine = line
 			break
 		}
