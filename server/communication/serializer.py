@@ -16,7 +16,7 @@ class Serializer:
         pass 
     
         
-    def __serialize_bet(self, data):
+    def __deserialize_bet(self, data):
         decoded_data = data.split(',')
         if len(decoded_data) != 6:
                 raise BetDeserializeError("Invalid data length")
@@ -25,13 +25,32 @@ class Serializer:
     
 
     def deserialize_bets(self, data):
-        deserialize_bets = data.decode('utf-8').rstrip().split('&')
+        haedar, bets = data.decode('utf-8').rstrip().split(' ', 1)
+        if haedar != BET_HEADER:
+            raise BetDeserializeError("Invalid header")
+        
+        deserialize_bets = bets.rstrip().split('&')
+
         bets = []
 
         for bet in deserialize_bets:
-            bets.append(self.__serialize_bet(bet))
+            bets.append(self.__deserialize_bet(bet))
         
         return bets
+    
+    def deserialize_winner_request(self, data):
+        haedar = data.decode('utf-8').rstrip().split(' ', 1)[0]
+        if haedar != WINNER_HEADER:
+            raise BetDeserializeError("Invalid header, expected WIN")
+        
+        return haedar
+    
+    def deserialize_end_request(self, data):
+        haedar = data.decode('utf-8').rstrip().split(' ', 1)[0]
+        if haedar != END_HEADER:
+            raise BetDeserializeError("Invalid header, expected END")
+        
+        return haedar
     
 
     def serialize_response(self, bet_amount, status):

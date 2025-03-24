@@ -47,6 +47,14 @@ class Server:
             
             serialize_response = self.serializer.serialize_response(len(bets), 'success')
             client_socket.sendall(serialize_response)
+
+            end_data = client_socket.recvall()
+            end_header = self.serializer.deserialize_end_request(end_data) #tiene que recibir este mensaje de las 5 agenicas para poder hacer el sorteo
+            logging.info(f'action: fin_apuestas | result: success')
+
+            
+
+
         
         except BetDeserializeError as e:
             logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
@@ -72,6 +80,7 @@ class Server:
         finishes, servers starts to accept new connections again
         """
         
+
         while self.shutdown is False:
             try:
                 client_sock = self.accept_new_connection()
