@@ -35,8 +35,8 @@ func (s *Serializer) SerializeEnd() []byte {
 	return []byte(endHeader + "\n")
 }
 
-func (s *Serializer) SerializeWin() []byte {
-	return []byte(winnerHeader + "\n")
+func (s *Serializer) SerializeWin(client_id string) []byte {
+	return []byte(winnerHeader + " " + client_id + "\n")
 }
 
 func (s *Serializer) separateHeader(data []byte) (string, string) {
