@@ -46,3 +46,7 @@ func (b *Bet) Serialize() string {
 
 	return fmt.Sprintf("%s,%s,%s,%s,%s,%s", fmt.Sprint(b.Agency), b.Name, b.LastName, b.Document, b.Birth, fmt.Sprint(b.Number))
 }
+
+func (b *Bet) Equals(other *Bet) bool {
+	return b.Agency == other.Agency && b.Name == other.Name && b.LastName == other.LastName && b.Document == other.Document && b.Birth == other.Birth && b.Number == other.Number
+}
