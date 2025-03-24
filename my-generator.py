@@ -10,14 +10,6 @@ class MyDumper(yaml.Dumper):
 
 def add_clients(num_clients, data):
 
-    hardcoded_env_vars = {
-        'NOMBRE': 'Santiago Lionel',
-        'APELLIDO': 'Lorca',
-        'DOCUMENTO': '30904465',
-        'NACIMIENTO': '1999-03-17',
-        'NUMERO': '7574'
-    }
-
 
     for i in range(1, num_clients + 1):
         client_name = f'client{i}'
@@ -26,9 +18,6 @@ def add_clients(num_clients, data):
             './client/config.yaml:/config.yaml',
             f'./.data/agency-{i}.csv:/data/agency-{i}.csv' 
         ]
-
-        for key, value in hardcoded_env_vars.items():
-            environment.append(f'{key}={value}')
 
         data['services'][client_name] = {
             'container_name': client_name,
