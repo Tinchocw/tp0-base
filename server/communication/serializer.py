@@ -55,12 +55,9 @@ class Serializer:
         return f"{BET_HEADER } {status},{bet_amount}\n".encode('utf-8')
     
 
-    def serialize_winners(self, winners):
-        serialized_winners = ""
-
-        for winner_dni in winners:
-            serialized_winners += f"{winner_dni},"
-        
-        return f"{WINNER_HEADER} {serialized_winners}/n".encode('utf-8')
     
+    def serialize_winners(self, winners):
+        serialized_winners = ",".join(winners)  # Une los elementos con comas
+        return f"{WINNER_HEADER} {serialized_winners}\n".encode('utf-8')
+        
 
