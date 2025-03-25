@@ -5,12 +5,18 @@ END_HEADER = "END"
 WINNER_HEADER = "WIN"
 
 
+
 class BetDeserializeError(Exception):
     """Excepción personalizada para errores de decodificación de apuestas."""
     def __init__(self, message):
         super().__init__(message)
 
-     
+
+class DeserializeError(Exception):
+    """Excepción personalizada para errores de decodificación de ganadores."""
+    def __init__(self, message):
+        super().__init__(message)
+
 class Serializer:
     def __init__(self):
         pass 
@@ -24,12 +30,14 @@ class Serializer:
         return utils.Bet(decoded_data[0], decoded_data[1], decoded_data[2], decoded_data[3], decoded_data[4], decoded_data[5]) 
     
 
+
+    def deserialize_response(self, data):
+        header, data = data.decode('utf-8').rstrip().split(' ', 1)
+        return header, data
+    
+
     def deserialize_bets(self, data):
-        haedar, bets = data.decode('utf-8').rstrip().split(' ', 1)
-        if haedar != BET_HEADER:
-            raise BetDeserializeError("Invalid header")
-        
-        deserialize_bets = bets.rstrip().split('&')
+        deserialize_bets = data.rstrip().split('&')
 
         bets = []
 
@@ -37,21 +45,22 @@ class Serializer:
             bets.append(self.__deserialize_bet(bet))
         
         return bets
-    
-    def deserialize_winner_request(self, data):
-        haedar = data.decode('utf-8').rstrip().split(' ', 1)[0]
-        if haedar != WINNER_HEADER:
-            raise BetDeserializeError("Invalid header, expected WIN")
-        
-        return haedar
+
     
     def deserialize_end_request(self, data):
-        haedar, agency_id = data.decode('utf-8').rstrip().split(' ', 1)
-        if haedar != END_HEADER:
-            raise BetDeserializeError("Invalid header, expected END")
-        
-        return int(agency_id)
+        return int(data)
     
 
-    def serialize_response(self, bet_amount, status):
-        return f"{status},{bet_amount}\n".encode('utf-8')
+    def serialize_amount_response(self, bet_amount, status):
+        return f"{BET_HEADER } {status},{bet_amount}\n".encode('utf-8')
+    
+
+    def serialize_winners(self, winners):
+        serialized_winners = ""
+
+        for winner_dni in winners:
+            serialized_winners += f"{winner_dni},"
+        
+        return f"{WINNER_HEADER} {serialized_winners}/n".encode('utf-8')
+    
+

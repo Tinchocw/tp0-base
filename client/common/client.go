@@ -115,10 +115,11 @@ func (c *Client) SendAllBets() {
 		)
 		return
 	}
-	defer parser.Close()
 
 	serializer := communication.NewSerializer()
 	endOfFile := false
+
+	c.createClientSocket()
 
 	for !endOfFile {
 
@@ -144,8 +145,6 @@ func (c *Client) SendAllBets() {
 		}
 
 		batchSerialized := serializer.SerializeBet(batch)
-
-		c.createClientSocket()
 
 		err = c.socket.SendAll(batchSerialized)
 
@@ -177,13 +176,13 @@ func (c *Client) SendAllBets() {
 
 		log.Infof("action: apuestas_almacenada | result: %v | cantidad: %v", result, amount)
 
-		c.deleteClientSocket()
+		//c.deleteClientSocket()
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
 	}
 
-	err = c.socket.SendAll(serializer.SerializeEnd())
+	err = c.socket.SendAll(serializer.SerializeEnd(c.config.ID))
 	if err != nil {
 		log.Errorf("action: send_end | result: fail | client_id: %v | error: %v",
 			c.config.ID,
@@ -191,13 +190,7 @@ func (c *Client) SendAllBets() {
 		)
 	}
 
-	err = c.handleWinnerRequest(*serializer)
-	if err != nil {
-		log.Errorf("action: send_winner | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-	}
+	c.handleWinnerRequest(*serializer)
 
 	c.deleteResources()
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
@@ -205,16 +198,8 @@ func (c *Client) SendAllBets() {
 
 func (c *Client) handleWinnerRequest(serializer communication.Serializer) error {
 
-	err := c.socket.SendAll(serializer.SerializeWin(c.config.ID))
-	if err != nil {
-		log.Errorf("action: send_winner | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-		return err
-	}
-
 	winnerSerialize, err := c.socket.RecvAll()
+	log.Infof("action: winner_received | result: success | client_id: %v | amount: %v", c.config.ID, winnerSerialize)
 	if err != nil {
 		log.Errorf("action: receive_winner | result: fail | client_id: %v | error: %v",
 			c.config.ID,
@@ -233,7 +218,6 @@ func (c *Client) handleWinnerRequest(serializer communication.Serializer) error 
 	}
 
 	log.Infof("action: winner_received | result: success | client_id: %v | amount: %v", c.config.ID, winnerAmount)
-
 	return nil
 
 }

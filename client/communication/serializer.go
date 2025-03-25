@@ -31,12 +31,8 @@ func (*Serializer) SerializeBet(betBatch []Bet) []byte {
 	return []byte(result)
 }
 
-func (s *Serializer) SerializeEnd() []byte {
-	return []byte(endHeader + "\n")
-}
-
-func (s *Serializer) SerializeWin(client_id string) []byte {
-	return []byte(winnerHeader + " " + client_id + "\n")
+func (s *Serializer) SerializeEnd(client_id string) []byte {
+	return []byte(endHeader + " " + client_id + "\n")
 }
 
 func (s *Serializer) separateHeader(data []byte) (string, string) {
@@ -47,6 +43,10 @@ func (s *Serializer) separateHeader(data []byte) (string, string) {
 
 func (s *Serializer) DeserializeWinner(data []byte) (int, error) {
 	header, dataString := s.separateHeader(data)
+	fmt.Println("header", header)
+	fmt.Println("dataString", dataString)
+	dataString = strings.TrimSpace(dataString)
+
 	if header != winnerHeader {
 		return 0, fmt.Errorf("invalid response format: %s", dataString)
 	}
