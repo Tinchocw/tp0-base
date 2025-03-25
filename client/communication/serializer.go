@@ -43,8 +43,6 @@ func (s *Serializer) separateHeader(data []byte) (string, string) {
 
 func (s *Serializer) DeserializeWinner(data []byte) (int, error) {
 	header, dataString := s.separateHeader(data)
-	fmt.Println("header", header)
-	fmt.Println("dataString", dataString)
 	dataString = strings.TrimSpace(dataString)
 
 	if header != winnerHeader {

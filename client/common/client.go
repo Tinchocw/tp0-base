@@ -199,7 +199,6 @@ func (c *Client) SendAllBets() {
 func (c *Client) handleWinnerRequest(serializer communication.Serializer) error {
 
 	winnerSerialize, err := c.socket.RecvAll()
-	log.Infof("action: winner_received | result: success | client_id: %v | amount: %v", c.config.ID, winnerSerialize)
 	if err != nil {
 		log.Errorf("action: receive_winner | result: fail | client_id: %v | error: %v",
 			c.config.ID,
