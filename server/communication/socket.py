@@ -1,15 +1,18 @@
 import socket
 import logging
 
+END_MESSAGE_DELIMITER = b'\n'
+
 
 class Socket:
     def __init__(self, address, listen_backlog, sock=None):
         if sock is None:
-            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._socket.bind(('', address))
-            self._socket.listen(listen_backlog)
+            self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.__socket.bind(('', address))
+            self.__socket.listen(listen_backlog)
+            self.__overflow = ""
         else:
-            self._socket = sock
+            self.__socket = sock
 
 
     @classmethod
@@ -21,26 +24,33 @@ class Socket:
         return cls(address, None, socket)
     
 
+
+# Recibo un mensaje
+# ese mensaje contiene un /n en el medio, por lo que tengo más información despues 
+# 
     def recvall(self):
-        data = b''
-        while True:
-            chunk = self._socket.recv(1024)
+        while END_MESSAGE_DELIMITER not in self.__overflow:
+            chunk = self.__socket.recv(1024)
             if not chunk:
-                raise BrokenPipeError("socket connection broken")
+                if self.__overflow :
+                    message = self.__overflow
+                    self.__overflow = ""
+                    return message
+                else: 
+                    raise BrokenPipeError("socket connection broken")
 
-            data += chunk
-
-            if b'\n' in chunk:
-                break
+            self.__overflow += chunk
+        
+        message, self.__overflow = self.__overflow.split(END_MESSAGE_DELIMITER, 1)
             
-        return  data 
+        return  message 
     
     def sendall (self, data):
         total_sent = 0
         total_legth = len(data) 
 
         while total_sent < total_legth:
-                sent = self._socket.send(data[total_sent:]) 
+                sent = self.__socket.send(data[total_sent:]) 
                 if sent == 0:
                     raise BrokenPipeError("socket connection broken")
                 
@@ -56,12 +66,12 @@ class Socket:
 
         # Connection arrived
         logging.info('action: accept_connections | result: in_progress')
-        c, addr = self._socket.accept()
+        c, addr = self.__socket.accept()
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return Socket.from_socket(addr, c)
     
 
     def close(self):
-        self._socket.close()
+        self.__socket.close()
         logging.info("action: close_server_socket | result: success")
 
