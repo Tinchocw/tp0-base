@@ -26,7 +26,7 @@ def initialize_config():
         config_params["port"] = int(os.getenv('SERVER_PORT', config["DEFAULT"]["SERVER_PORT"]))
         config_params["listen_backlog"] = int(os.getenv('SERVER_LISTEN_BACKLOG', config["DEFAULT"]["SERVER_LISTEN_BACKLOG"]))
         config_params["logging_level"] = os.getenv('LOGGING_LEVEL', config["DEFAULT"]["LOGGING_LEVEL"])
-        config_params["clients_amount_draw"] = int(os.getenv('AGENCY_AMOUNT_DRAW', config["DEFAULT"]["AGENCY_AMOUNT_DRAW"]))
+        config_params["agency_amount"] = int(os.getenv('AGENCY_AMOUNT', config["DEFAULT"]["AGENCY_AMOUNT"]))
     except KeyError as e:
         raise KeyError("Key was not found. Error: {} .Aborting server".format(e))
     except ValueError as e:
@@ -40,7 +40,7 @@ def main():
     logging_level = config_params["logging_level"]
     port = config_params["port"]
     listen_backlog = config_params["listen_backlog"]
-    clients_amount_draw = config_params["clients_amount_draw"]
+    agency_amount = config_params["clients_amount_draw"]
 
     initialize_log(logging_level)
 
@@ -51,7 +51,7 @@ def main():
 
     # Initialize server and start server loop
 
-    server = Server(port, listen_backlog, clients_amount_draw)
+    server = Server(port, listen_backlog, agency_amount)
     server.run()
 
 def initialize_log(logging_level):
