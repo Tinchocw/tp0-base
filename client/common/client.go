@@ -271,7 +271,7 @@ func (c *Client) handleWinnerRequest() error {
 		}
 
 		if isWinAviable {
-			log.Infof("action: winner_obtained | result: success | client_id: %v | amount: %v", c.config.ID, winnerAmount)
+			log.Infof("action: cant_ganadores | result: success | client_id: %v | amount: %v", c.config.ID, winnerAmount)
 			break
 		} else {
 			log.Infof("action: winner_not_obtained | result: success | client_id: %v", c.config.ID)
