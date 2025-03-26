@@ -38,7 +38,7 @@ def generate_docker_compose(num_clients, output_file):
                 'container_name': 'server', 
                 'image': 'server:latest',
                 'entrypoint': 'python3 /main.py',
-                'environment': ['PYTHONUNBUFFERED=1'],
+                'environment': ['PYTHONUNBUFFERED=1', 'AGENCY_AMOUNT_DRAW=3'],
                 'volumes': ['./server/config.ini:/config.ini'],
                 'networks': ['testing_net']
             }
