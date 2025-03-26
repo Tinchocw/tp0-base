@@ -119,8 +119,7 @@ class Server:
                     if bet.agency not in winners:
                         winners[bet.agency] = []
                     winners[bet.agency].append(bet.document)
-                
-                logging.info(f"action: perform_draw | result: success | winner: {winners}")
+            
 
             try:
                 result_message = self.__serializer.serialize_winners(winners.get(agency_id, []))
