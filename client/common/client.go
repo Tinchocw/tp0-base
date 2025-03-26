@@ -116,13 +116,12 @@ func (c *Client) Run() {
 	if err != nil {
 		return
 	}
-	log.Infof("Todas las apuestas han sido enviadas")
+
 	err = c.NotifyAllBetsHaveBeenSent()
 	if err != nil {
 		return
 	}
 
-	log.Info("esperando respuesta")
 	err = c.handleWinnerRequest()
 	if err != nil {
 		return
@@ -230,10 +229,9 @@ func (c *Client) NotifyAllBetsHaveBeenSent() error {
 
 func (c *Client) handleWinnerRequest() error {
 	var err error = nil
-	isWinAviable := false
 	sleepTime := 200 * time.Millisecond
 
-	for !isWinAviable {
+	for {
 		isReceived := c.isSignalReceived()
 		if isReceived {
 			return ErrSignalReceived
@@ -275,7 +273,7 @@ func (c *Client) handleWinnerRequest() error {
 
 		if isWinAviable {
 			log.Infof("action: winner_obtained | result: success | client_id: %v | amount: %v", c.config.ID, winnerAmount)
-
+			break
 		} else {
 			log.Infof("action: winner_not_obtained | result: success | client_id: %v", c.config.ID)
 			time.Sleep(sleepTime)
