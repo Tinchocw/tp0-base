@@ -75,5 +75,5 @@ class Socket:
 
     def close(self):
         self.__socket.close()
-        logging.info("action: close_server_socket | result: success")
+        logging.info("action: close_socket | result: success")
 

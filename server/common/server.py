@@ -53,14 +53,16 @@ class Server:
                     client_socket.sendall(serialize_response)
                 elif header == 'END':
                     
-                    agency_id = self.__serializer.deserialize_end_request(data) #tiene que recibir este mensaje de las 5 agenicas para poder hacer el sorteo
+                    agency_id = self.__serializer.deserialize_agency_id(data) #tiene que recibir este mensaje de las 5 agenicas para poder hacer el sorteo
                     logging.info(f'action: fin_apuestas | result: success | agencia: {agency_id}')
                     # En el caso de que no tenga la dirección lo que tengo que hacer es tener un set de clientes en el que cuando se llega a la cantidad esperada se corta 
                     self.__finished_clients += 1  
                     self.__client_sockets[agency_id] = client_socket 
                     
                 elif header == 'WIN':
-                    self.perform_draw(client_socket)
+                    agency_id = self.__serializer.deserialize_agency_id(data)
+
+                    self.perform_draw(client_socket, agency_id)
                     break
 
 
@@ -104,13 +106,11 @@ class Server:
 
         
 
-    def perform_draw(self, client_socket):
+    def perform_draw(self, client_socket, agency_id):
         """
         Realiza el sorteo una vez que todos los clientes han finalizado.
         """
-        winners = {}  # Diccionario para almacenar los ganadores por agencia
-
-        # Carga todas las apuestas y determina los ganadores
+        winners = {}
 
         if self.__finished_clients == self.__total_clients:
 
@@ -120,10 +120,8 @@ class Server:
                         winners[bet.agency] = []
                     winners[bet.agency].append(bet.document)
 
-            # Envía los resultados a cada cliente
-            for agency_id, client_socket in self.__client_sockets.items():
                 try:
-                    result_message = self.__serializer.serialize_winners(winners.get(agency_id, []))
+                    result_message = self.__serializer.serialize_winners(winners[agency_id])
                     client_socket.sendall(result_message)
                 except BrokenPipeError as e:
                     logging.error(f"action: send_result | result: fail | error: BrokenPipeError: {e}")

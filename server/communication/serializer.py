@@ -48,7 +48,7 @@ class Serializer:
         return bets
 
     
-    def deserialize_end_request(self, data):
+    def deserialize_agency_id(self, data):
         return int(data)
     
 
