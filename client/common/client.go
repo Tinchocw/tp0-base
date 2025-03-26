@@ -271,10 +271,10 @@ func (c *Client) handleWinnerRequest() error {
 		}
 
 		if isWinAviable {
-			log.Infof("action: cant_ganadores | result: success | client_id: %v | amount: %v", c.config.ID, winnerAmount)
+			log.Infof("action: consulta_ganadores | result: fail | cant_ganadores: %v", winnerAmount)
 			break
 		} else {
-			log.Infof("action: winner_not_obtained | result: success | client_id: %v", c.config.ID)
+			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", winnerAmount)
 			time.Sleep(sleepTime)
 			sleepTime = sleepTime * 2
 		}
