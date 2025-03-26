@@ -122,7 +122,7 @@ class Server:
             
 
             try:
-                result_message = self.__serializer.serialize_winners(winners.get(agency_id, []))
+                result_message = self.__serializer.serialize_winners(winners.get(agency_id, ["empty"]))
                 client_socket.sendall(result_message)
             except BrokenPipeError as e:
                 logging.error(f"action: send_result | result: fail | error: BrokenPipeError: {e}")

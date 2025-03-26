@@ -62,4 +62,4 @@ class Serializer:
         return f"{WINNER_HEADER} {serialized_winners}\n".encode('utf-8')
         
     def serialize_not_ready(self):
-        return f"{NOT_READY_HEADER} a\n".encode('utf-8')
+        return f"{NOT_READY_HEADER} empty\n".encode('utf-8')
