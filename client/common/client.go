@@ -67,7 +67,7 @@ func (c *Client) deleteClientSocket() {
 			err,
 		)
 	}
-
+	log.Infof("action: close_socket | result: success | client_id: %v", c.config.ID)
 }
 
 func (c *Client) deleteStopChannel() {
