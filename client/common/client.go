@@ -56,8 +56,6 @@ func (c *Client) createClientSocket() error {
 			err,
 		)
 	}
-
-	log.Info("creando nuevo socket")
 	return nil
 }
 
