@@ -120,15 +120,10 @@ class Server:
                         winners[bet.agency] = []
                     winners[bet.agency].append(bet.document)
 
-            logging.info(f"Sorteo completado. Ganadores: {winners}")
-
             # Envía los resultados a cada cliente
             for agency_id, client_socket in self.__client_sockets.items():
                 try:
                     result_message = self.__serializer.serialize_winners(winners.get(agency_id, []))
-                    logging.info(f"Enviando resultados a la agencia {agency_id}")
-                    logging.info(f"result_message: {result_message}")
-
                     client_socket.sendall(result_message)
                 except BrokenPipeError as e:
                     logging.error(f"action: send_result | result: fail | error: BrokenPipeError: {e}")

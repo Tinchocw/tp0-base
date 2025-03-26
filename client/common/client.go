@@ -234,7 +234,6 @@ func (c *Client) handleWinnerRequest() error {
 	sleepTime := 200 * time.Millisecond
 
 	for !isWinAviable {
-		log.Info("entre a handleWinnerRequest dentro del for ")
 		isReceived := c.isSignalReceived()
 		if isReceived {
 			return ErrSignalReceived
@@ -264,8 +263,6 @@ func (c *Client) handleWinnerRequest() error {
 			)
 			return err
 		}
-
-		log.Info("recibi el mensaje de winner")
 
 		isWinAviable, winnerAmount, err := c.serializer.DeserializeWinnerResponse(winnerSerializeResponse, c.config.ID)
 		if err != nil {
