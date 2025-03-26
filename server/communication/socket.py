@@ -10,9 +10,9 @@ class Socket:
             self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.__socket.bind(('', address))
             self.__socket.listen(listen_backlog)
-            self.__overflow = ""
         else:
             self.__socket = sock
+            self.__overflow = bytearray()
 
 
     @classmethod
@@ -34,12 +34,12 @@ class Socket:
             if not chunk:
                 if self.__overflow :
                     message = self.__overflow
-                    self.__overflow = ""
+                    self.__overflow = bytearray()
                     return message
                 else: 
                     raise BrokenPipeError("socket connection broken")
 
-            self.__overflow += chunk
+            self.__overflow.extend(chunk)
         
         message, self.__overflow = self.__overflow.split(END_MESSAGE_DELIMITER, 1)
             
