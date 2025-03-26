@@ -40,7 +40,7 @@ def main():
     logging_level = config_params["logging_level"]
     port = config_params["port"]
     listen_backlog = config_params["listen_backlog"]
-    agency_amount = config_params["clients_amount_draw"]
+    agency_amount = config_params["agency_amount"]
 
     initialize_log(logging_level)
 
