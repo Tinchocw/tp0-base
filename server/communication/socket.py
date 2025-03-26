@@ -45,6 +45,8 @@ class Socket:
             
         return  message 
     
+    
+    
     def sendall (self, data):
         total_sent = 0
         total_legth = len(data) 

@@ -56,6 +56,8 @@ func (c *Client) createClientSocket() error {
 			err,
 		)
 	}
+
+	log.Info("creando nuevo socket")
 	return nil
 }
 
@@ -114,12 +116,13 @@ func (c *Client) Run() {
 	if err != nil {
 		return
 	}
-
+	log.Infof("Todas las apuestas han sido enviadas")
 	err = c.NotifyAllBetsHaveBeenSent()
 	if err != nil {
 		return
 	}
 
+	log.Info("esperando respuesta")
 	err = c.handleWinnerRequest()
 	if err != nil {
 		return
@@ -228,16 +231,16 @@ func (c *Client) NotifyAllBetsHaveBeenSent() error {
 func (c *Client) handleWinnerRequest() error {
 	var err error = nil
 	isWinAviable := false
-	sleepTime := 1 * time.Second
+	sleepTime := 200 * time.Millisecond
 
 	for !isWinAviable {
-
+		log.Info("entre a handleWinnerRequest dentro del for ")
 		isReceived := c.isSignalReceived()
 		if isReceived {
 			return ErrSignalReceived
 		}
-
 		if c.socket.IsClosed() {
+
 			err = c.createClientSocket()
 			if err != nil {
 				return err
@@ -261,6 +264,8 @@ func (c *Client) handleWinnerRequest() error {
 			)
 			return err
 		}
+
+		log.Info("recibi el mensaje de winner")
 
 		isWinAviable, winnerAmount, err := c.serializer.DeserializeWinnerResponse(winnerSerializeResponse, c.config.ID)
 		if err != nil {

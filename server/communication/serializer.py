@@ -3,6 +3,7 @@ from common import utils
 BET_HEADER = "BET"
 END_HEADER = "END"
 WINNER_HEADER = "WIN"
+NOT_READY_HEADER = "NOT_READY"
 
 
 
@@ -60,4 +61,5 @@ class Serializer:
         serialized_winners = ",".join(winners)  # Une los elementos con comas
         return f"{WINNER_HEADER} {serialized_winners}\n".encode('utf-8')
         
-
+    def serialize_not_ready(self):
+        return f"{NOT_READY_HEADER} a\n".encode('utf-8')

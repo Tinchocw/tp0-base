@@ -35,9 +35,8 @@ class Server:
 
     def handle_client_connection(self, client_socket):
         
-        finish_field = False
 
-        while not finish_field:
+        while True:
             try:
                 encoded_data = client_socket.recvall()
 
@@ -53,16 +52,16 @@ class Server:
                     serialize_response = self.__serializer.serialize_amount_response(len(bets), 'success')
                     client_socket.sendall(serialize_response)
                 elif header == 'END':
-                    finish_field = True
+                    
                     agency_id = self.__serializer.deserialize_end_request(data) #tiene que recibir este mensaje de las 5 agenicas para poder hacer el sorteo
-
                     logging.info(f'action: fin_apuestas | result: success | agencia: {agency_id}')
                     # En el caso de que no tenga la dirección lo que tengo que hacer es tener un set de clientes en el que cuando se llega a la cantidad esperada se corta 
                     self.__finished_clients += 1  
                     self.__client_sockets[agency_id] = client_socket 
                     
                 elif header == 'WIN':
-                    self.perform_draw()
+                    self.perform_draw(client_socket)
+                    break
 
 
             except BetDeserializeError as e:
@@ -105,7 +104,7 @@ class Server:
 
         
 
-    def perform_draw(self):
+    def perform_draw(self, client_socket):
         """
         Realiza el sorteo una vez que todos los clientes han finalizado.
         """
@@ -114,6 +113,7 @@ class Server:
         # Carga todas las apuestas y determina los ganadores
 
         if self.__finished_clients == self.__total_clients:
+
             for bet in utils.load_bets():
                 if utils.has_won(bet):
                     if bet.agency not in winners:
@@ -137,3 +137,7 @@ class Server:
 
                 finally:
                     client_socket.close()
+        else :
+            not_ready_message = self.__serializer.serialize_not_ready()
+            client_socket.sendall(not_ready_message)
+
