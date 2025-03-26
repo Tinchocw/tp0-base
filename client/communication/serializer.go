@@ -8,6 +8,7 @@ import (
 const betHeader = "BET"
 const endHeader = "END"
 const winnerHeader = "WIN"
+const notReady = "NOT_READY"
 
 // Serializer is a placeholder struct for serialization logic
 type Serializer struct{}
@@ -31,8 +32,8 @@ func (*Serializer) SerializeBet(betBatch []Bet) []byte {
 	return []byte(result)
 }
 
-func (s *Serializer) SerializeEnd(client_id string) []byte {
-	return []byte(endHeader + " " + client_id + "\n")
+func (s *Serializer) serializeRequest(client_id string, header string) []byte {
+	return []byte(header + " " + client_id + "\n")
 }
 
 func (s *Serializer) separateHeader(data []byte) (string, string) {
@@ -41,17 +42,29 @@ func (s *Serializer) separateHeader(data []byte) (string, string) {
 	return parts[0], parts[1]
 }
 
-func (s *Serializer) DeserializeWinner(data []byte) (int, error) {
+func (s *Serializer) SerializeEndRequest(client_id string) []byte {
+	return s.serializeRequest(client_id, endHeader)
+}
+
+func (s *Serializer) SerializeWinnerRequest(client_id string) []byte {
+	return s.serializeRequest(client_id, winnerHeader)
+}
+
+func (s *Serializer) DeserializeWinnerResponse(data []byte, client_id string) (bool, int, error) {
 	header, dataString := s.separateHeader(data)
 	dataString = strings.TrimSpace(dataString)
 
-	if header != winnerHeader {
-		return 0, fmt.Errorf("invalid response format: %s", dataString)
+	if header != notReady && header != winnerHeader {
+		return false, 0, fmt.Errorf("invalid response format: %s", dataString)
 	}
 
-	parts := strings.Split(dataString, ",")
+	if header == winnerHeader {
+		parts := strings.Split(dataString, ",")
+		return true, len(parts), nil
 
-	return len(parts), nil
+	}
+
+	return false, 0, nil
 }
 
 func (s *Serializer) DeserializeBatchAmount(data []byte) (string, string, error) {

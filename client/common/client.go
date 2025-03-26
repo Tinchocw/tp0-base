@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"io"
 	"time"
 
@@ -29,7 +30,10 @@ type Client struct {
 	config      ClientConfig
 	socket      *communication.Socket
 	stopChannel chan struct{}
+	serializer  *communication.Serializer
 }
+
+var ErrSignalReceived = errors.New("signal received")
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
@@ -37,6 +41,7 @@ func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config:      config,
 		stopChannel: make(chan struct{}),
+		serializer:  communication.NewSerializer(),
 	}
 	return client
 }
@@ -73,7 +78,7 @@ func (c *Client) deleteStopChannel() {
 
 }
 
-func (c *Client) deleteResources() {
+func (c *Client) Shutdown() {
 	c.deleteStopChannel()
 	c.deleteClientSocket()
 }
@@ -85,7 +90,7 @@ func (c *Client) handleSignals(sigChan chan os.Signal) {
 	go func() {
 		<-sigChan
 		log.Infof("action: signal_received | result: success | client_id: %v", c.config.ID)
-		c.deleteResources()
+		c.Shutdown()
 	}()
 
 }
@@ -100,11 +105,31 @@ func (c *Client) isSignalReceived() bool {
 	return false
 }
 
-// SendAllBets Send messages to the client until some time threshold is met
-func (c *Client) SendAllBets() {
+func (c *Client) Run() {
+
 	signalChannel := make(chan os.Signal, 1) // This channel will receive the signals
 	c.handleSignals(signalChannel)
 
+	err := c.SendAllBets()
+	if err != nil {
+		return
+	}
+
+	err = c.NotifyAllBetsHaveBeenSent()
+	if err != nil {
+		return
+	}
+
+	err = c.handleWinnerRequest()
+	if err != nil {
+		return
+	}
+
+	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+}
+
+// SendAllBets Send messages to the client until some time threshold is met
+func (c *Client) SendAllBets() error {
 	var err error = nil
 
 	parser, err := NewParser(c.config.ID, c.config.MaxAmount, maxSize)
@@ -113,19 +138,21 @@ func (c *Client) SendAllBets() {
 			c.config.ID,
 			err,
 		)
-		return
+		return err
 	}
 
-	serializer := communication.NewSerializer()
 	endOfFile := false
 
-	c.createClientSocket()
+	err = c.createClientSocket()
+	if err != nil {
+		return err
+	}
 
 	for !endOfFile {
 
 		isReceived := c.isSignalReceived()
 		if isReceived {
-			return
+			return ErrSignalReceived
 		}
 
 		batch, err := parser.ReadBatch()
@@ -140,11 +167,11 @@ func (c *Client) SendAllBets() {
 				c.config.ID,
 				err,
 			)
-			return
+			return err
 
 		}
 
-		batchSerialized := serializer.SerializeBet(batch)
+		batchSerialized := c.serializer.SerializeBet(batch)
 
 		err = c.socket.SendAll(batchSerialized)
 
@@ -153,7 +180,7 @@ func (c *Client) SendAllBets() {
 				c.config.ID,
 				err,
 			)
-			return
+			return err
 		}
 
 		response, err := c.socket.RecvAll()
@@ -162,61 +189,99 @@ func (c *Client) SendAllBets() {
 				c.config.ID,
 				err,
 			)
-			return
+			return err
 		}
 
-		result, amount, err := serializer.DeserializeBatchAmount(response)
+		result, amount, err := c.serializer.DeserializeBatchAmount(response)
 		if err != nil {
 			log.Errorf("action: deserialize_response | result: fail | client_id: %v | error: %v",
 				c.config.ID,
 				err,
 			)
-			return
+			return err
 		}
 
 		log.Infof("action: apuestas_almacenada | result: %v | cantidad: %v", result, amount)
+	}
+	return nil
+}
 
-		//c.deleteClientSocket()
+func (c *Client) NotifyAllBetsHaveBeenSent() error {
+	var err error = nil
 
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
+	isReceived := c.isSignalReceived()
+	if isReceived {
+		return ErrSignalReceived
 	}
 
-	err = c.socket.SendAll(serializer.SerializeEnd(c.config.ID))
+	err = c.socket.SendAll(c.serializer.SerializeEndRequest(c.config.ID))
 	if err != nil {
 		log.Errorf("action: send_end | result: fail | client_id: %v | error: %v",
 			c.config.ID,
 			err,
 		)
+		return err
 	}
-
-	c.handleWinnerRequest(*serializer)
-
-	c.deleteResources()
-	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+	return err
 }
 
-func (c *Client) handleWinnerRequest(serializer communication.Serializer) error {
+func (c *Client) handleWinnerRequest() error {
+	var err error = nil
+	isWinAviable := false
+	sleepTime := 1 * time.Second
 
-	winnerSerialize, err := c.socket.RecvAll()
-	if err != nil {
-		log.Errorf("action: receive_winner | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-		return err
+	for !isWinAviable {
+
+		isReceived := c.isSignalReceived()
+		if isReceived {
+			return ErrSignalReceived
+		}
+
+		if c.socket.IsClosed() {
+			err = c.createClientSocket()
+			if err != nil {
+				return err
+			}
+		}
+
+		err = c.socket.SendAll(c.serializer.SerializeWinnerRequest(c.config.ID))
+		if err != nil {
+			log.Errorf("action: send_end | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return err
+		}
+
+		winnerSerializeResponse, err := c.socket.RecvAll()
+		if err != nil {
+			log.Errorf("action: receive_winner | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return err
+		}
+
+		isWinAviable, winnerAmount, err := c.serializer.DeserializeWinnerResponse(winnerSerializeResponse, c.config.ID)
+		if err != nil {
+			log.Errorf("action: deserialize_winner | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return err
+		}
+
+		if isWinAviable {
+			log.Infof("action: winner_obtained | result: success | client_id: %v | amount: %v", c.config.ID, winnerAmount)
+
+		} else {
+			log.Infof("action: winner_not_obtained | result: success | client_id: %v", c.config.ID)
+			time.Sleep(sleepTime)
+			sleepTime = sleepTime * 2
+		}
+
+		c.socket.Close()
 	}
-
-	winnerAmount, err := serializer.DeserializeWinner(winnerSerialize)
-	if err != nil {
-		log.Errorf("action: deserialize_winner | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-		return err
-	}
-
-	log.Infof("action: winner_received | result: success | client_id: %v | amount: %v", c.config.ID, winnerAmount)
 	return nil
 
 }

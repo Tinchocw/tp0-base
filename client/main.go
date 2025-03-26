@@ -112,5 +112,6 @@ func main() {
 	}
 
 	client := common.NewClient(clientConfig)
-	client.SendAllBets()
+	client.Run()
+	client.Shutdown()
 }

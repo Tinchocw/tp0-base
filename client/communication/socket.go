@@ -67,10 +67,15 @@ func (s *Socket) RecvAll() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+func (s *Socket) IsClosed() bool {
+	return s.conn == nil
+}
+
 func (s *Socket) Close() error {
-	if s.conn == nil {
+	if s.IsClosed() {
 		return fmt.Errorf("socket connection is already closed")
 	}
 	s.conn.Close()
+	s.conn = nil
 	return nil
 }
