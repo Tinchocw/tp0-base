@@ -79,6 +79,7 @@ func (c *Client) deleteStopChannel() {
 }
 
 func (c *Client) Shutdown() {
+	time.Sleep(100 * time.Millisecond)
 	c.deleteStopChannel()
 	c.deleteClientSocket()
 }
