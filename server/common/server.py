@@ -119,18 +119,18 @@ class Server:
                     if bet.agency not in winners:
                         winners[bet.agency] = []
                     winners[bet.agency].append(bet.document)
-                    logging.info(f"action: perform_draw | result: success | winner: {bet.document}")
+                
+                logging.info(f"action: perform_draw | result: success | winner: {winners}")
 
-                try:
-                    result_message = self.__serializer.serialize_winners(winners.get(agency_id, []))
-                    client_socket.sendall(result_message)
-                except BrokenPipeError as e:
-                    logging.error(f"action: send_result | result: fail | error: BrokenPipeError: {e}")
-                except OSError as e:
-                    logging.error(f"action: send_result | result: fail | error: {e}")
-
-                finally:
-                    client_socket.close()
+            try:
+                result_message = self.__serializer.serialize_winners(winners.get(agency_id, []))
+                client_socket.sendall(result_message)
+            except BrokenPipeError as e:
+                logging.error(f"action: send_result | result: fail | error: BrokenPipeError: {e}")
+            except OSError as e:
+                logging.error(f"action: send_result | result: fail | error: {e}")
+            finally:
+                client_socket.close()
         else :
             not_ready_message = self.__serializer.serialize_not_ready()
             client_socket.sendall(not_ready_message)
