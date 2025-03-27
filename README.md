@@ -179,18 +179,3 @@ Se proveen [pruebas automáticas](https://github.com/7574-sistemas-distribuidos/
 
 La corrección personal tendrá en cuenta la calidad del código entregado y casos de error posibles, se manifiesten o no durante la ejecución del trabajo práctico. Se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección informados  [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
 
-
-# Entrega 
-
-## Como correr el ejercicio 
-
-
-## Aspectos importantes de la solución
-
-En este ejercicio lo que buscamos es mejorar la implementación previa agregando el manejo de señales para que el servidor y el cliente terminen de forma _graceful_ al recibir la señal SIGTERM. 
-
-Tanto en el cliente como en el servidor lo que buscamos es agregar una handler para la señal SIGTERM que cierre todos los recursos abiertos. Así mismo agregamos una nueva condición en el loop principal para que si se recibe la señal SIGTERM se termine el programa.
-
-En el caso del cliente la implementación para handlear la señal esta basado en la comunicación a partir de canales, uno el cual recibe la señal cuando sucedio y otro que nos sirve para comunicar esto a nuestro programa.
-
-En cambio, en el caso del servidor, lo que hacemos es con "signal" setear el handler para la señal SIGTERM y cuando sucede la señal modificamos un booleano para que el loop principal termine.
