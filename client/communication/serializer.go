@@ -10,7 +10,6 @@ const endHeader = "END"
 const winnerHeader = "WIN"
 const notReady = "NOT_READY"
 
-// Serializer is a placeholder struct for serialization logic
 type Serializer struct{}
 
 func NewSerializer() *Serializer {

@@ -129,7 +129,6 @@ func (c *Client) Run() {
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 
-// SendAllBets Send messages to the client until some time threshold is met
 func (c *Client) SendAllBets() error {
 	var err error = nil
 

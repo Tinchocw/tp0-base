@@ -24,10 +24,6 @@ class Socket:
         return cls(address, None, socket)
     
 
-
-# Recibo un mensaje
-# ese mensaje contiene un /n en el medio, por lo que tengo más información despues 
-# 
     def recvall(self):
         while END_MESSAGE_DELIMITER not in self.__overflow:
             chunk = self.__socket.recv(1024)
@@ -44,7 +40,7 @@ class Socket:
         message, self.__overflow = self.__overflow.split(END_MESSAGE_DELIMITER, 1)
             
         return  message 
-    
+
     
     
     def sendall (self, data):
