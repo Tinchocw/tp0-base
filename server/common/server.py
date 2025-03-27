@@ -135,12 +135,9 @@ class Server:
                 client_thread = threading.Thread(
                     target=self.handle_client_connection, args=(client_sock,)
                 )
-                client_thread.daemon = True  # Permite que el hilo termine cuando el programa principal termine
                 client_thread.start()
 
                 self.client__threads.append(client_thread)
-
-                self.handle_client_connection(client_sock)
 
                 self.__reap_clients
             except OSError as e:
