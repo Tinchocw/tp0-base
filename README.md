@@ -378,6 +378,17 @@ El header esta separado por un espacio del payload y luego el protocolo continua
     ```
     ${BET_HEADER} ${STATUS},${BET_AMOUNT}\n
     ```
+    
+    Esta respuesta puede ser dos formas distintas:
+    - Notificaci처n de batch recibido correctamente, donde :
+        - STATUS = SUCCESS
+        - BET_AMOUNT = Cantidad de apuestas recibidas 
+
+    - Notificaci처n de batch con error, donde :
+        - STATUS = FAIL
+        - BET_AMOUNT = 0
+
+
     - Notificaci처n de ganadores consultados:
     ```
     ${WINNERS_HEADER} ${WINNERS}\n
@@ -400,5 +411,9 @@ Para evitar problemas de concurrencia se utilizo un lock para proteger la secci�
 
 
 
+
+## Aclaraciones
+
+A medida que iba desarrollando los ejercicios me fui dando cuenta, principalmente del ejercicio 5 en adelante, que tanto el protocolo de comunicaci처n, como la separaci처n de responsabilidades no era la mejor y por ello fui modificando la estructura del c처digo llevando a una mejor soluci처n. 
 
 
