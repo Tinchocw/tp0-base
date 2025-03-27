@@ -77,7 +77,7 @@ class Server:
         client_socket.sendall(serialize_response)
         return bets
 
-    def __process_end_request(self, client_socket, data):
+    def __process_end_request(self, data):
         agency_id = self.__serializer.deserialize_agency_id(data) 
         logging.info(f'action: fin_apuestas | result: success | agencia: {agency_id}')
         self.__finished_clients += 1  
