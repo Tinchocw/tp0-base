@@ -74,6 +74,7 @@ func (c *Client) deleteStopChannel() {
 }
 
 func (c *Client) deleteResources() {
+	time.Sleep(100 * time.Millisecond)
 	c.deleteStopChannel()
 	c.deleteClientSocket()
 }
@@ -177,8 +178,6 @@ func (c *Client) SendAllBets() {
 
 		c.deleteClientSocket()
 
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
 	}
 
 	c.deleteResources()
