@@ -34,7 +34,7 @@ class Server:
 
     def handle_client_connection(self, client_socket):
         
-
+        bets = []
         try: 
             while True:
                 
@@ -44,7 +44,7 @@ class Server:
                     if header == 'BET':
                         bets = self.__process_bet_request(client_socket, data)
                     elif header == 'END':
-                        self.__process_end_request(client_socket, data) 
+                        self.__process_end_request(data) 
                         
                     elif header == 'WIN':
                         self.__process_win_request(client_socket, data)
