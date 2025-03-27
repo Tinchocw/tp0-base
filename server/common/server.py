@@ -1,5 +1,6 @@
 import logging
 import signal
+import threading
 from communication.socket import Socket
 from common import utils
 from communication.serializer import BetDeserializeError, DeserializeError, Serializer
@@ -12,6 +13,10 @@ class Server:
         self.__serializer = Serializer()
         self.__finished_clients = 0  
         self.__total_clients = total_clients  
+
+        self.__file_lock = threading.Lock()
+        self.__counter_lock = threading.Lock()
+        self.client__threads = []
 
         signal.signal(signal.SIGTERM, self.__handle_sigterm)
 
@@ -28,6 +33,10 @@ class Server:
         self.__shutdown = True
         self.__socket.close()
 
+        for thread in self.client__threads:
+            thread.join()
+        
+        self.client__threads = []
 
     def accept_new_connection(self):
         return self.__socket.accept()
@@ -70,7 +79,10 @@ class Server:
 
     def __process_bet_request(self, client_socket, data):
         bets = self.__serializer.deserialize_bets(data)
-        utils.store_bets(bets)
+        
+        with self.__file_lock: 
+            utils.store_bets(bets)
+        
         logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
                     
         serialize_response = self.__serializer.serialize_amount_response(len(bets), 'success')
@@ -80,30 +92,35 @@ class Server:
     def __process_end_request(self, data):
         agency_id = self.__serializer.deserialize_agency_id(data) 
         logging.info(f'action: fin_apuestas | result: success | agencia: {agency_id}')
-        self.__finished_clients += 1  
+        with self.__counter_lock: 
+            self.__finished_clients += 1  
 
     def __process_win_request(self, client_socket, data):
 
         agency_id = self.__serializer.deserialize_agency_id(data)
         
-        if self.__finished_clients == self.__total_clients:
+        with self.__counter_lock:
+            all_clients_finished = self.__finished_clients == self.__total_clients
 
-            winners = self.__perfrom_draw()            
-            result_message = self.__serializer.serialize_winners(winners.get(agency_id, ["empty"]))
-            client_socket.sendall(result_message)
-            
-        else :
+        if all_clients_finished:
+                winners = self.__perfrom_draw(agency_id)            
+                result_message = self.__serializer.serialize_winners(winners)
+                client_socket.sendall(result_message)
+        else:
             not_ready_message = self.__serializer.serialize_not_ready()
             client_socket.sendall(not_ready_message)
 
-    def __perfrom_draw(self):
-        winners = {}
-        for bet in utils.load_bets():
-            if utils.has_won(bet):
-                if bet.agency not in winners:
-                    winners[bet.agency] = []
-                winners[bet.agency].append(bet.document)
-
+    def __perfrom_draw(self, agency_id):
+        winners = []
+        
+        with self.__file_lock:
+            for bet in utils.load_bets():
+                if utils.has_won(bet) and bet.agency == agency_id:
+                    winners.append(bet.agency)
+        
+        if not winners:
+            winners.append("empty")
+                
         return winners
 
 
@@ -111,11 +128,32 @@ class Server:
     
         while self.__shutdown is False:
             try:
+                
                 client_sock = self.accept_new_connection()
+                
+                client_thread = threading.Thread(
+                    target=self.handle_client_connection, args=(client_sock,)
+                )
+                client_thread.daemon = True  # Permite que el hilo termine cuando el programa principal termine
+                client_thread.start()
+
+                self.client__threads.append(client_thread)
+
                 self.handle_client_connection(client_sock)
+
+                self.__reap_clients
             except OSError as e:
                 if(self.__shutdown):
                     break
                 logging.error(f"action: accept_connections | result: fail | error: {e}")
 
+
+
+    def __reap_clients(self):
         
+        for client in self.client__threads:
+            if not client.is_alive():
+                client.join()
+                self.client__threads.remove(client)        
+                logging.info("action: join client | result: success")
+                
