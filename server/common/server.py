@@ -103,7 +103,8 @@ class Server:
             all_clients_finished = self.__finished_clients == self.__total_clients
 
         if all_clients_finished:
-                winners = self.__perfrom_draw(agency_id)            
+                winners = self.__perfrom_draw(agency_id) 
+                logging.info(f'action: sorteo | result: success | ganadores: {winners}')           
                 result_message = self.__serializer.serialize_winners(winners)
                 client_socket.sendall(result_message)
         else:
@@ -116,7 +117,7 @@ class Server:
         with self.__file_lock:
             for bet in utils.load_bets():
                 if utils.has_won(bet) and bet.agency == agency_id:
-                    winners.append(bet.agency)
+                    winners.append(bet.document)
         
         if not winners:
             winners.append("empty")
