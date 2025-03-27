@@ -9,6 +9,7 @@ const betHeader = "BET"
 const endHeader = "END"
 const winnerHeader = "WIN"
 const notReady = "NOT_READY"
+const empty = "empty"
 
 type Serializer struct{}
 
@@ -59,9 +60,8 @@ func (s *Serializer) DeserializeWinnerResponse(data []byte, client_id string) (b
 
 	if header == winnerHeader {
 		parts := strings.Split(dataString, ",")
-		fmt.Println(parts)
 		if len(parts) == 1 {
-			if parts[0] == "empty" {
+			if parts[0] == empty {
 				return true, 0, nil
 			}
 		}

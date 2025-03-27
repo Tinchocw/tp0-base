@@ -16,7 +16,7 @@ class Server:
 
         self.__file_lock = threading.Lock()
         self.__counter_lock = threading.Lock()
-        self.client__threads = []
+        self.client_threads = []
 
         signal.signal(signal.SIGTERM, self.__handle_sigterm)
 
@@ -33,10 +33,11 @@ class Server:
         self.__shutdown = True
         self.__socket.close()
 
-        for thread in self.client__threads:
+        for thread in self.client_threads:
             thread.join()
+            logging.info("action: join_client_thread | result: success")
         
-        self.client__threads = []
+        self.client_threads = []
 
     def accept_new_connection(self):
         return self.__socket.accept()
@@ -103,7 +104,6 @@ class Server:
 
         if all_clients_finished:
                 winners = self.__perfrom_draw(agency_id) 
-                logging.info(f'action: sorteo | result: success | ganadores: {winners}')           
                 result_message = self.__serializer.serialize_winners(winners)
                 client_socket.sendall(result_message)
         else:
@@ -116,11 +116,7 @@ class Server:
         with self.__file_lock:
             for bet in utils.load_bets():
                 if utils.has_won(bet) and bet.agency == agency_id:
-                    winners.append(bet.document)
-        
-        if not winners:
-            winners.append("empty")
-                
+                    winners.append(bet.document)                
         return winners
 
 
@@ -135,10 +131,10 @@ class Server:
                     target=self.handle_client_connection, args=(client_sock,)
                 )
                 client_thread.start()
-
-                self.client__threads.append(client_thread)
-
-                self.__reap_clients
+                
+                self.client_threads.append(client_thread)
+                self.__reap_clients()
+                
             except OSError as e:
                 if(self.__shutdown):
                     break
@@ -147,10 +143,9 @@ class Server:
 
 
     def __reap_clients(self):
-        
-        for client in self.client__threads:
+        for client in self.client_threads:
             if not client.is_alive():
                 client.join()
-                self.client__threads.remove(client)        
+                self.client_threads.remove(client)        
                 logging.info("action: join client | result: success")
                 

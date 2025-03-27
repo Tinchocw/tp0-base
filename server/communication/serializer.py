@@ -4,6 +4,7 @@ BET_HEADER = "BET"
 END_HEADER = "END"
 WINNER_HEADER = "WIN"
 NOT_READY_HEADER = "NOT_READY"
+EMPTY = "EMPTY"
 
 
 
@@ -58,8 +59,11 @@ class Serializer:
 
     
     def serialize_winners(self, winners):
-        serialized_winners = ",".join(winners)  # Une los elementos con comas
+        if not winners:
+            return f"{WINNER_HEADER} {EMPTY}\n".encode('utf-8')
+        
+        serialized_winners = ",".join(winners)  
         return f"{WINNER_HEADER} {serialized_winners}\n".encode('utf-8')
         
     def serialize_not_ready(self):
-        return f"{NOT_READY_HEADER} empty\n".encode('utf-8')
+        return f"{NOT_READY_HEADER} {EMPTY}\n".encode('utf-8')
