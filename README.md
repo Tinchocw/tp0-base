@@ -182,7 +182,66 @@ La corrección personal tendrá en cuenta la calidad del código entregado y cas
 
 # Entrega 
 
-## Como correr el ejercicio 
+## Ej 1 
+
+### Como ejecutar el ejercicio
+
+Para ejecutar el ejercicio 1 se debe correr el script `generar-compose.sh` con el nombre del archivo de salida y la cantidad de clientes esperados. 
+
+```bash
+./generar-compose.sh ${DOCKER_COMPOSE_FILE} ${CANTIDAD_CLIENTES}
+```
+
+### Aspectos importantes de la solución
+
+En este ejercicio lo que buscamos es generar un archivo de docker-compose con una cantidad configurable de clientes. Para esto se crea un scripy de bash que llama a un subscript de python que se encarga de generar el archivo de docker-compose con la cantidad de clientes que se le pasa por parametro.
+
+
+## Ej 2
+
+### Como ejecutar el ejercicio
+
+Para ejecutar el ejercicio 2 se debe correr el comando `docker-compose-up` y luego modificar el archivo `config.ini` o `config.yaml` con los valores que se deseen. Luego se debe corre el comando docker-down para destruir el contenedor. Y finalmente volver a  correr el contenedor con `docker compose -f docker-compose-dev.yaml up -d --build` para que los cambios sean efectivos.
+
+
+### Aspectos importantes de la solución
+
+En este ejercicio lo que buscamos es mejorar la implementación previa para que los cambios en el archivo de configuración no requieran reconstruir las imágenes de Docker para que los mismos sean efectivos. La configuración a través del archivo correspondiente (`config.ini` y `config.yaml`, dependiendo de la aplicación) debe ser inyectada en el container y persistida por fuera de la imagen.
+
+Para poder lograr esto utilize la funcionalidad de docker **bind mounts** que permite montar un archivo o directorio del host en un contenedor. De esta forma, al modificar el archivo de configuración en el host, los cambios se ven reflejados en el contenedor.
+
+Para ello fueron necesarios los siguientes cambios:
+
+- En el archivo `docker-compose.yaml` se agrego un volumen para el archivo de configuración de cada contenedor.
+
+- Se agrego un **dockerignore** para que no se copien los archivos de configuración dentro de la imgaen y puedan ser montados desde el host.
+
+
+## Ej 3
+
+### Como ejecutar el ejercicio
+
+Para ejecutar el ejercicio 3 se debe correr el script `validar-echo-server.sh` que se encarga de verificar el correcto funcionamiento del servidor utilizando el comando `netcat` para interactuar con el mismo. 
+
+```bash
+./validar-echo-server.sh
+```
+
+### Aspectos importantes de la solución
+
+En el script lo que se hace es levantar un volumen a partir de la imagen Alpine, la cual es una imagen muy liviana de linux. Luego se conecta a la red ya existente del compose y le envia un mensaje al servidor y espera recibir el mismo mensaje enviado. 
+
+
+## Ej 4
+
+
+### Como ejecutar el ejercicio
+
+Para ejecutar el ejercicio 4 se debe correr el comando `docker-compose-up` y luego enviar la señal SIGTERM al servidor o al cliente. 
+
+```bash
+docker stop ${CONTAINER_NAME}
+```
 
 
 ## Aspectos importantes de la solución
@@ -194,3 +253,152 @@ Tanto en el cliente como en el servidor lo que buscamos es agregar una handler p
 En el caso del cliente la implementación para handlear la señal esta basado en la comunicación a partir de canales, uno el cual recibe la señal cuando sucedio y otro que nos sirve para comunicar esto a nuestro programa.
 
 En cambio, en el caso del servidor, lo que hacemos es con "signal" setear el handler para la señal SIGTERM y cuando sucede la señal modificamos un booleano para que el loop principal termine.
+
+
+## Ej 5
+
+### Como ejecutar el ejercicio
+
+```bash
+./generar-compose.sh ${DOCKER_COMPOSE_FILE} ${CANTIDAD_CLIENTES}
+make docker-compose-up
+make docker-compose-down
+```
+### Aspectos importantes de la solución
+
+### Protocolo
+
+El formato de los mensajes enviados y recibidos entre el cliente tiene el formato de texto plano utilizando como delimitador el caracter '\n'.
+
+- Envio de una bet del usuario al servidor: 
+```
+${AGENCY_ID},${NAME},${LAST_NAME},${DOCUMENT},${BIRTHDATE},${NUMBER}\n
+```
+
+- Respuesta del servidor al cliente: 
+```
+${DOCUMENT},${NUMBER}\n
+```
+
+### Prevención de short read y short write
+
+Para prevenir estos fenómenos se implemetaron las siguientes lógicas:
+
+- ReadAll: Se leen todos los bytes del mensaje hasta encontrar el delimitador '\n'. En caso de que se cierre la conexión antes de recibir el delimitador se retorna un error.
+- WriteAll: Se envían mensajes hasta que se envíe todo el mensaje completo. En caso de que se cierre la conexión antes de enviar todo el mensaje se retorna un error.
+
+
+### Separación de responsabilidades
+
+- Nueva clase socket en el cliente y servidor para que sean los encargados de enviar y recibir los mensajes.
+- Nueva clase Serializador para que sea la encargada de serializar y deserializar los mensajes.
+
+
+
+## Ej 6
+
+### Como ejecutar el ejercicio
+
+Se ejecuta de la misma forma que el ejercicio 5.
+
+### Aspectos importantes de la solución
+
+### Protocolo
+Como ahora se envia la información de las apuestas de a batchs se tuve que modificar el protocolo de comunicación de la siguiene manera:
+
+- Envio de un batch de bets del usuario al servidor: 
+```
+${AGENCY_ID},${NAME},${LAST_NAME},${DOCUMENT},${BIRTHDATE},${NUMBER}&${AGENCY_ID},${NAME},${LAST_NAME},${DOCUMENT},${BIRTHDATE},${NUMBER}\n
+```
+
+### Lectura de a batch de archivo
+
+Se implemento una nueva clase Parser que se encarga de leer el archivo de apuestas de la agencia y devolver un batch de apuestas. La cantidad de batchs que se envian en cada mensaje es configurable desde el archivo de configuración. Pero se limita a que el tamaño del mensaje no supere los 8kB.
+
+En este item es importante notar que no se carga toda la información en memoria, sino que se va leyendo y procesando cada una de las lineas del archivos hasta llegar al limite configurado por el archivo de configuración, el limite de 8kB o hasta que se termine de leer el archivo.
+
+
+### Estrucutra de la solución
+
+- Se modifico el cliente para que envie toda información del archivo. 
+- Mayor modularización
+
+
+## Ej 7
+
+### Como ejecutar el ejercicio
+
+Se ejecuta de la misma forma que el ejercicio 5.
+
+### Aspectos importantes de la solución
+
+ Para este ejercicio se cambio el comportamiento del usuario y del servidor.
+ 
+
+El usuario va a abrir una nueva conexión y va a enviar todas las apuestas que contiene su archivo. Una vez finalizado va a enviar un mensaje al servidor para comunicar que ya finalizo la acción anterior.Finalmente envia un mensaje consultando la lista de ganadores del sorteo correspondientes a su agencia.
+
+En los primeros dos mensajes la comunicación va estable, envio toda la información a partir de una unica conexión. En el tercer mensaje lo que se hace es envia un mensaje preguntando por los ganadores, a esta pregunta puede haber dos posibles respuestas con dos reacciones diferentes:
+
+- Si el servidor no recibio la notificación de todos los jugadores, el servidor va a responder con un mensaje de error y el cliente se va a terminar su conexión, esperar un tiempo y luego volver a preguntar.
+- Si el servidor recibio la notificación de todos los jugadores, el servidor va a responder con un mensaje de exito y el cliente va a esperar la respuesta con los ganadores de la agencia y va a terminar la ejecución.
+
+
+El servidor por su parte va a identificar cual es el mensaje que le envia el cliente y va a actuar en consecuencia.
+
+
+
+### Protocolo
+
+Con el aumento de la cantidad de mensajes enviados y recibidos se tuvo que modificar el protocolo de comunicación de la siguiene manera:
+
+```
+${HEADER} ${PAYLOAD}\n
+```
+
+El header esta separado por un espacio del payload y luego el protocolo continua igual que en el ejercicio 5.
+
+#### Mensajes 
+
+- Cliente
+    - Envio de un batch de bets:
+    ```
+    ${HEADER_BET} ${AGENCY_ID},${NAME},${LAST_NAME},${DOCUMENT},${BIRTHDATE},${NUMBER}&${AGENCY_ID},${NAME},${LAST_NAME},${DOCUMENT},${BIRTHDATE},${NUMBER}\n
+    ```
+    - Notificación al servidor de que termino de enviar todas las apuestas:
+    ```
+    ${HEADER_END} ${AGENCY_ID}\n
+    ```
+    - Consulta de la lista de ganadores:
+    ```
+    ${HEADER_WINNERS} ${AGENCY_ID}\n
+    ```
+
+- Servidor
+    - Notificación de batch recibido:
+    ```
+    ${BET_HEADER} ${STATUS},${BET_AMOUNT}\n
+    ```
+    - Notificación de ganadores consultados:
+    ```
+    ${WINNERS_HEADER} ${WINNERS}\n
+    ```
+    - Notificación de sorteo no realizado:
+    ```
+    ${NOT_READY_HEADER} ${EMPTY}\n
+    ```
+## Ej 8
+
+### Como ejecutar el ejercicio
+
+Se ejecuta de la misma forma que el ejercicio 5.
+
+### Aspectos importantes de la solución
+
+La implementación de la concurrencia en el servidor se realizo utilizando la libreria de python `threading`. Se creo un nuevo hilo para cada conexión que se establece con un cliente. De esta forma se logra que el servidor pueda aceptar conexiones y procesar mensajes en paralelo. 
+
+Para evitar problemas de concurrencia se utilizo un lock para proteger la sección critica de la función que procesa los mensajes. De esta forma se evita que dos hilos intenten acceder a la misma sección de memoria al mismo tiempo. Las secciones criticas identificadas fueron el acceso al archivo de apuestas y el acceso a la lista de ganadores.
+
+
+
+
+

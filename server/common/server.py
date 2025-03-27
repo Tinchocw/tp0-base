@@ -53,8 +53,7 @@ class Server:
                     if header == 'BET':
                         bets = self.__process_bet_request(client_socket, data)
                     elif header == 'END':
-                        self.__process_end_request(data) 
-                        
+                        self.__process_end_request(data)                         
                     elif header == 'WIN':
                         self.__process_win_request(client_socket, data)
                         break
