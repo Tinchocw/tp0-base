@@ -58,7 +58,6 @@ class Serializer:
 
     
     def serialize_winners(self, winners):
-        print(winners)
         serialized_winners = ",".join(winners)  # Une los elementos con comas
         return f"{WINNER_HEADER} {serialized_winners}\n".encode('utf-8')
         
