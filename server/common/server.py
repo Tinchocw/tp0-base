@@ -48,8 +48,7 @@ class Server:
                         self.__process_end_request(client_socket, data) 
                         
                     elif header == 'WIN':
-                        agency_id = self.__serializer.deserialize_agency_id(data)
-                        self.__process_win_request(client_socket, agency_id)
+                        self.__process_win_request(client_socket, data)
                         break
 
 
@@ -85,7 +84,9 @@ class Server:
         self.__finished_clients += 1  
         self.__client_sockets[agency_id] = client_socket
 
-    def __process_win_request(self, client_socket, agency_id):
+    def __process_win_request(self, client_socket, data):
+
+        agency_id = self.__serializer.deserialize_agency_id(data)
         
         if self.__finished_clients == self.__total_clients:
 
@@ -97,7 +98,7 @@ class Server:
             not_ready_message = self.__serializer.serialize_not_ready()
             client_socket.sendall(not_ready_message)
 
-    def __perfrom_draw(self, winners):
+    def __perfrom_draw(self):
         winners = {}
         for bet in utils.load_bets():
             if utils.has_won(bet):
