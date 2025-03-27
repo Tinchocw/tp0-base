@@ -40,7 +40,6 @@ class Server:
                 
                     encoded_data = client_socket.recvall()
 
-
                     header, data = self.__serializer.deserialize_response(encoded_data)
                     if header == 'BET':
                         bets = self.__process_bet_request(client_socket, data)
@@ -82,7 +81,6 @@ class Server:
         agency_id = self.__serializer.deserialize_agency_id(data) 
         logging.info(f'action: fin_apuestas | result: success | agencia: {agency_id}')
         self.__finished_clients += 1  
-        self.__client_sockets[agency_id] = client_socket
 
     def __process_win_request(self, client_socket, data):
 
