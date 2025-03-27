@@ -60,7 +60,8 @@ func (s *Serializer) DeserializeWinnerResponse(data []byte, client_id string) (b
 
 	if header == winnerHeader {
 		parts := strings.Split(dataString, ",")
-		if len(parts) == 2 {
+		fmt.Println(parts)
+		if len(parts) == 1 {
 			if parts[0] == "empty" {
 				return true, 0, nil
 			}
