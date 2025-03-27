@@ -271,7 +271,7 @@ func (c *Client) handleWinnerRequest() error {
 		}
 
 		if isWinAviable {
-			log.Infof("action: consulta_ganadores | result: succes | cant_ganadores: %v", winnerAmount)
+			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", winnerAmount)
 			break
 		} else {
 			time.Sleep(sleepTime)
