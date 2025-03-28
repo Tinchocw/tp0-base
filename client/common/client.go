@@ -31,6 +31,7 @@ type Client struct {
 	socket      *communication.Socket
 	stopChannel chan struct{}
 	serializer  *communication.Serializer
+	parser      *Parser
 }
 
 var ErrSignalReceived = errors.New("signal received")
@@ -38,10 +39,21 @@ var ErrSignalReceived = errors.New("signal received")
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
+
+	parser, err := NewParser(config.ID, config.MaxAmount, maxSize)
+	if err != nil {
+		log.Errorf("action: create_bet_parser | result: fail | client_id: %v | error: %v",
+			config.ID,
+			err,
+		)
+		return nil
+	}
+
 	client := &Client{
 		config:      config,
 		stopChannel: make(chan struct{}),
 		serializer:  communication.NewSerializer(),
+		parser:      parser,
 	}
 	return client
 }
@@ -80,8 +92,8 @@ func (c *Client) deleteStopChannel() {
 
 func (c *Client) Shutdown() {
 	time.Sleep(100 * time.Millisecond)
-	c.deleteStopChannel()
 	c.deleteClientSocket()
+	c.parser.Close()
 }
 
 func (c *Client) handleSignals(sigChan chan os.Signal) {
@@ -92,6 +104,7 @@ func (c *Client) handleSignals(sigChan chan os.Signal) {
 		<-sigChan
 		log.Infof("action: signal_received | result: success | client_id: %v", c.config.ID)
 		c.Shutdown()
+		c.deleteStopChannel()
 	}()
 
 }
@@ -132,15 +145,6 @@ func (c *Client) Run() {
 func (c *Client) SendAllBets() error {
 	var err error = nil
 
-	parser, err := NewParser(c.config.ID, c.config.MaxAmount, maxSize)
-	if err != nil {
-		log.Errorf("action: create_bet_parser | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-		return err
-	}
-
 	endOfFile := false
 
 	err = c.createClientSocket()
@@ -155,7 +159,7 @@ func (c *Client) SendAllBets() error {
 			return ErrSignalReceived
 		}
 
-		batch, err := parser.ReadBatch()
+		batch, err := c.parser.ReadBatch()
 		if err != nil {
 			if err == io.EOF {
 				log.Infof("action: end_of_file | result: success | client_id: %v", c.config.ID)
@@ -203,6 +207,7 @@ func (c *Client) SendAllBets() error {
 
 		log.Infof("action: apuestas_almacenada | result: %v | cantidad: %v", result, amount)
 	}
+	c.parser.Close()
 	return nil
 }
 

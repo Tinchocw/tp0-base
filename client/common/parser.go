@@ -100,11 +100,17 @@ func (p *Parser) ReadBatch() ([]communication.Bet, error) {
 }
 
 func (p *Parser) Close() error {
-	if p.file != nil {
-		log.Infof("action: close_file | result: success | file: %v", p.file.Name())
-		return p.file.Close()
-	} else {
-		log.Infof("action: close_file | result: fail | file: %v", p.file.Name())
+	if p.file == nil {
+		return nil
 	}
+
+	err := p.file.Close()
+	if err != nil {
+		log.Errorf("action: close_file | result: fail | file: %v | error: %v", p.file.Name(), err)
+		return err
+	}
+
+	log.Infof("action: close_file | result: success | file: %v", p.file.Name())
+	p.file = nil // Evita que se cierre dos veces
 	return nil
 }
